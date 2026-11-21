@@ -30,7 +30,7 @@ class ChangeApplicationStage
             }
 
             if ($locked->campaign->status === CampaignStatus::Closed && ! $actor->isSuperAdmin()) {
-                throw ValidationException::withMessages(['stage' => __('Tahap pada gelombang yang sudah ditutup hanya dapat diubah Super Admin.')]);
+                throw ValidationException::withMessages(['stage' => __('Tahap pada rekrutmen yang sudah ditutup hanya dapat diubah Super Admin.')]);
             }
 
             $reason = $reason !== null ? trim($reason) : null;

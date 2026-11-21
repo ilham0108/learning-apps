@@ -15,7 +15,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Menambahkan kandidat ke gelombang. Email yang sudah terdaftar sebagai kandidat
+ * Menambahkan kandidat ke rekrutmen. Email yang sudah terdaftar sebagai kandidat
  * mendapat lamaran baru, bukan akun baru (aturan B2). Akun baru belum punya
  * password yang diketahui siapa pun sampai kandidat memakai tautan aktivasi.
  */
@@ -32,7 +32,7 @@ class RegisterCandidate
     public function __invoke(array $data, RecruitmentCampaign $campaign, User $actor): RecruitmentApplication
     {
         if ($campaign->status === CampaignStatus::Closed) {
-            throw ValidationException::withMessages(['campaign' => __('Gelombang yang sudah ditutup tidak dapat menerima kandidat baru.')]);
+            throw ValidationException::withMessages(['campaign' => __('Rekrutmen yang sudah ditutup tidak dapat menerima kandidat baru.')]);
         }
 
         return DB::transaction(function () use ($data, $campaign, $actor) {
@@ -46,10 +46,10 @@ class RegisterCandidate
             $profile = $user->candidateProfile ?? $this->createCandidate($data, $email, $user);
 
             if ($profile->applications()->where('recruitment_campaign_id', $campaign->id)->exists()) {
-                throw ValidationException::withMessages(['email' => __('Kandidat ini sudah terdaftar di gelombang tersebut.')]);
+                throw ValidationException::withMessages(['email' => __('Kandidat ini sudah terdaftar di rekrutmen tersebut.')]);
             }
 
-            // Kandidat yang sudah aktif langsung "registered" di gelombang baru.
+            // Kandidat yang sudah aktif langsung "registered" di rekrutmen baru.
             $stage = $profile->activated_at !== null ? RecruitmentStage::Registered : RecruitmentStage::Invited;
 
             $application = $profile->applications()->create([

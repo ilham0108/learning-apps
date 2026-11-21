@@ -6,10 +6,13 @@ use App\Domain\Candidates\Models\Position;
 use App\Domain\Candidates\Models\RecruitmentApplication;
 use App\Domain\Candidates\Models\RecruitmentCampaign;
 use App\Domain\Exams\Actions\DuplicateExam;
+use App\Domain\Exams\Actions\ReleaseResults;
 use App\Domain\Exams\Actions\SaveExam;
 use App\Domain\Exams\Enums\ExamStatus;
+use App\Domain\Exams\Enums\GradingStatus;
 use App\Domain\Exams\Models\Exam;
 use App\Domain\Exams\Models\ExamAssignment;
+use App\Domain\Exams\Models\ExamAttempt;
 use App\Domain\Exams\Models\ExamQuestion;
 use App\Domain\Learning\Models\LearningProgram;
 use App\Http\Controllers\Controller;
@@ -142,6 +145,11 @@ class ExamController extends Controller
                     ])->all(),
             ],
             'categories' => QuestionController::categoryOptions(),
+            'attemptStats' => [
+                'total' => ($attempts = ExamAttempt::query()->visibleTo($user)
+                    ->whereHas('assignment', fn ($query) => $query->where('exam_id', $exam->id)))->count(),
+                'pending_grading' => (clone $attempts)->where('grading_status', GradingStatus::PendingManual)->count(),
+            ],
         ]);
     }
 
@@ -183,6 +191,17 @@ class ExamController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Ujian berhasil diduplikasi sebagai draf.')]);
 
         return to_route('admin.exams.show', $copy);
+    }
+
+    public function releaseResults(Request $request, Exam $exam, ReleaseResults $release): RedirectResponse
+    {
+        $this->authorize('releaseResults', $exam);
+
+        $release($exam, $request->user());
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Hasil ujian dipublikasikan. Kandidat melihat nilai setelah semua jawabannya dinilai.')]);
+
+        return back();
     }
 
     /**

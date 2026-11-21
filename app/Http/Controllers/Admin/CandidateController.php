@@ -20,6 +20,7 @@ use App\Http\Requests\Admin\StoreCandidateRequest;
 use App\Http\Requests\Admin\UpdateCandidateRequest;
 use App\Http\Resources\Candidates\CandidateDetailResource;
 use App\Http\Resources\Candidates\CandidateListResource;
+use App\Http\Resources\Candidates\PersonalDataPresenter;
 use App\Http\Resources\Paginated;
 use App\Support\Search;
 use Illuminate\Database\Eloquent\Builder;
@@ -50,7 +51,7 @@ class CandidateController extends Controller
                 ->where('users.name', 'like', Search::contains($search))
                 ->orWhere('users.email', 'like', Search::contains($search))
                 ->orWhere('candidate_profiles.candidate_number', 'like', Search::contains($search))))
-            // Filter tahap dan gelombang hanya melihat lamaran dalam lingkup pengguna.
+            // Filter tahap dan rekrutmen hanya melihat lamaran dalam lingkup pengguna.
             ->when($filters['campaign'] || $filters['stage'], fn ($query) => $query->whereHas('applications', fn ($query) => $query
                 ->visibleTo($user)
                 ->when($filters['campaign'], fn ($query, string $campaign) => $query->whereIn(
@@ -72,7 +73,7 @@ class CandidateController extends Controller
             'candidates' => Paginated::make($candidates, CandidateListResource::class),
             'filters' => $filters,
             'campaignOptions' => $this->campaignOptions(RecruitmentCampaign::query()->visibleTo($user)),
-            // Gelombang yang masih menerima kandidat, untuk modal "Tambah kandidat".
+            // Rekrutmen yang masih menerima kandidat, untuk modal "Tambah kandidat".
             'openCampaignOptions' => $this->campaignOptions(StoreCandidateRequest::openCampaigns($request)),
         ]);
     }
@@ -87,7 +88,7 @@ class CandidateController extends Controller
             $request->user(),
         );
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Kandidat berhasil ditambahkan ke gelombang.')]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Kandidat berhasil ditambahkan ke rekrutmen.')]);
 
         return to_route('admin.candidates.show', $application->candidateProfile);
     }
@@ -120,6 +121,7 @@ class CandidateController extends Controller
         return Inertia::render('admin/candidates/show', [
             'candidate' => CandidateDetailResource::make($candidate)->resolve($request),
             'canUpdate' => $request->user()->can('update', $candidate),
+            'personalData' => PersonalDataPresenter::make($candidate),
             // Program per lamaran beserta progres kandidat.
             'programAssignments' => $candidate->applications->mapWithKeys(fn (RecruitmentApplication $application) => [
                 $application->public_id => $application->programAssignments->map(fn (ProgramAssignment $assignment) => [

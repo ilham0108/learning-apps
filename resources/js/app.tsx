@@ -13,7 +13,9 @@ void createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
         switch (true) {
+            // Halaman ujian memakai header sendiri (timer, status simpan) tanpa menu navigasi.
             case name === 'error':
+            case name === 'candidate/attempts/runner':
                 return null;
             case name.startsWith('auth/'):
                 return AuthLayout;

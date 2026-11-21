@@ -1,22 +1,31 @@
 <?php
 
 use App\Http\Controllers\Admin\ApplicationController;
+use App\Http\Controllers\Admin\AttemptController as AdminAttemptController;
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\CampaignController;
 use App\Http\Controllers\Admin\CandidateController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ExamAssignmentController;
 use App\Http\Controllers\Admin\ExamController;
 use App\Http\Controllers\Admin\ExamQuestionController;
+use App\Http\Controllers\Admin\ExportController;
+use App\Http\Controllers\Admin\GradingController;
 use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\Admin\ProgramAssignmentController;
 use App\Http\Controllers\Admin\ProgramContentController;
 use App\Http\Controllers\Admin\ProgramController;
 use App\Http\Controllers\Admin\QuestionCategoryController;
 use App\Http\Controllers\Admin\QuestionController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Auth\ActivationController;
 use App\Http\Controllers\Auth\ConsentController;
 use App\Http\Controllers\Candidate\DashboardController as CandidateDashboardController;
+use App\Http\Controllers\Candidate\ExamController as CandidateExamController;
 use App\Http\Controllers\Candidate\LearningController;
+use App\Http\Controllers\Candidate\ProfileController as CandidateProfileController;
+use App\Http\Controllers\CandidateDocumentFileController;
+use App\Http\Controllers\ExamRunner\AttemptController;
 use App\Http\Controllers\MaterialFileController;
 use Illuminate\Support\Facades\Route;
 
@@ -53,6 +62,46 @@ Route::middleware(['auth', 'role:candidate', 'consent'])->prefix('learn')->name(
     Route::post('{program}/materials/{material}/complete', [LearningController::class, 'complete'])
         ->middleware('throttle:60,1')
         ->name('material.complete');
+});
+
+// Dokumen kandidat (CV, KTP, foto, sertifikat): wajib login, URL bertanda tangan, dan izin Policy.
+Route::middleware(['auth', 'consent', 'signed'])
+    ->get('candidate-documents/{document}/file', CandidateDocumentFileController::class)
+    ->name('candidate-documents.file');
+
+// Data diri kandidat. Nama route berbeda dari `profile.*` milik halaman pengaturan akun.
+Route::middleware(['auth', 'role:candidate', 'consent'])->prefix('profile')->name('candidate-profile.')
+    ->controller(CandidateProfileController::class)->group(function () {
+        Route::get('/', 'edit')->name('edit');
+        Route::put('personal', 'updatePersonal')->name('personal.update');
+        Route::post('educations', 'storeEducation')->name('educations.store');
+        Route::put('educations/{education}', 'updateEducation')->name('educations.update');
+        Route::delete('educations/{education}', 'destroyEducation')->name('educations.destroy');
+        Route::post('experiences', 'storeExperience')->name('experiences.store');
+        Route::put('experiences/{experience}', 'updateExperience')->name('experiences.update');
+        Route::delete('experiences/{experience}', 'destroyExperience')->name('experiences.destroy');
+        Route::post('documents', 'storeDocument')->middleware('throttle:20,1')->name('documents.store');
+        Route::delete('documents/{document}', 'destroyDocument')->name('documents.destroy');
+    });
+
+// Ujian kandidat. Endpoint JSON runner memakai sesi web + CSRF dan rate limit per endpoint.
+Route::middleware(['auth', 'role:candidate', 'consent'])->group(function () {
+    Route::get('exams', [CandidateExamController::class, 'index'])->name('exams.index');
+    Route::get('exams/{assignment}', [CandidateExamController::class, 'show'])->name('exams.show');
+    Route::post('exams/{assignment}/start', [CandidateExamController::class, 'start'])
+        ->middleware('throttle:attempt-start')
+        ->name('exams.start');
+
+    Route::prefix('attempts/{attempt}')->name('attempts.')->controller(AttemptController::class)->group(function () {
+        Route::get('/', 'show')->name('show');
+        Route::get('result', 'result')->name('result');
+        Route::get('state', 'state')->middleware('throttle:attempt-state')->name('state');
+        Route::get('clock', 'clock')->middleware('throttle:attempt-clock')->name('clock');
+        Route::put('answers/{question}', 'saveAnswer')->middleware('throttle:attempt-answer')->name('answers.update');
+        Route::post('position', 'position')->middleware('throttle:attempt-position')->name('position');
+        Route::post('events', 'event')->middleware('throttle:attempt-event')->name('events.store');
+        Route::post('submit', 'submit')->middleware('throttle:attempt-submit')->name('submit');
+    });
 });
 
 Route::middleware(['auth', 'role:super_admin,hr'])->prefix('admin')->name('admin.')->group(function () {
@@ -112,6 +161,18 @@ Route::middleware(['auth', 'role:super_admin,hr'])->prefix('admin')->name('admin
     Route::post('exams/{exam}/assignments', [ExamAssignmentController::class, 'store'])->name('exams.assignments.store');
     Route::patch('exam-assignments/{assignment}', [ExamAssignmentController::class, 'update'])->name('exam-assignments.update');
     Route::delete('exam-assignments/{assignment}', [ExamAssignmentController::class, 'destroy'])->name('exam-assignments.destroy');
+    Route::post('exams/{exam}/release-results', [ExamController::class, 'releaseResults'])->name('exams.release-results');
+
+    Route::get('exams/{exam}/attempts', [AdminAttemptController::class, 'index'])->name('exams.attempts.index');
+    Route::get('attempts/{attempt}', [AdminAttemptController::class, 'show'])->name('attempts.show');
+    Route::put('attempts/{attempt}/answers/{question}/grade', [AdminAttemptController::class, 'grade'])->name('attempts.grade');
+    Route::get('grading', [GradingController::class, 'index'])->name('grading.index');
+
+    Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('exports', [ExportController::class, 'index'])->name('exports.index');
+    Route::post('exports', [ExportController::class, 'store'])->middleware('throttle:report-export')->name('exports.store');
+    Route::get('exports/{export}/download', [ExportController::class, 'download'])->name('exports.download');
+    Route::get('audit-log', [AuditLogController::class, 'index'])->name('audit-log.index');
 });
 
 require __DIR__.'/settings.php';

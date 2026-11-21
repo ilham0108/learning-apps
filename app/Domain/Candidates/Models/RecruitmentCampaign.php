@@ -55,7 +55,7 @@ class RecruitmentCampaign extends Model
     }
 
     /**
-     * Gelombang yang boleh diakses pengguna: Super Admin semua, HR hanya yang ditugaskan,
+     * Rekrutmen yang boleh diakses pengguna: Super Admin semua, HR hanya yang ditugaskan,
      * kandidat tidak ada. Scope ini juga dipakai Policy agar hanya ada satu sumber aturan.
      *
      * @param  Builder<self>  $query
@@ -70,7 +70,7 @@ class RecruitmentCampaign extends Model
     }
 
     /**
-     * Subquery ID gelombang yang ditugaskan kepada seorang HR.
+     * Subquery ID rekrutmen yang ditugaskan kepada seorang HR.
      */
     public static function assignedCampaignIds(User $user): QueryBuilder
     {
@@ -96,7 +96,7 @@ class RecruitmentCampaign extends Model
     }
 
     /**
-     * HR yang ditugaskan ke gelombang ini.
+     * HR yang ditugaskan ke rekrutmen ini.
      *
      * @return BelongsToMany<User, $this>
      */

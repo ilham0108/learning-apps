@@ -14,7 +14,7 @@ use Inertia\Response;
 
 /**
  * Data master departemen dan posisi (Super Admin dan HR). Data yang sudah dipakai
- * dinonaktifkan, bukan dihapus, agar riwayat gelombang tetap utuh.
+ * dinonaktifkan, bukan dihapus, agar riwayat rekrutmen tetap utuh.
  */
 class PositionController extends Controller
 {

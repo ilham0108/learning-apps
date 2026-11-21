@@ -3,6 +3,8 @@
 namespace App\Domain\Candidates\Models;
 
 use App\Domain\Access\Models\DataDeletionRequest;
+use App\Domain\Candidates\Enums\MaritalStatus;
+use App\Domain\Candidates\Enums\Religion;
 use App\Domain\Learning\Models\MaterialProgress;
 use App\Domain\Shared\Concerns\HasPublicId;
 use App\Domain\Shared\Enums\Role;
@@ -24,6 +26,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $candidate_number
  * @property string|null $phone
  * @property string|null $last_education
+ * @property string|null $city
+ * @property CarbonImmutable|null $birth_date
+ * @property Religion|null $religion
+ * @property MaritalStatus|null $marital_status
+ * @property string|null $linkedin_url
+ * @property string|null $portfolio_url
  * @property CarbonImmutable $registered_on
  * @property CarbonImmutable|null $activated_at
  * @property CarbonImmutable|null $consent_given_at
@@ -33,7 +41,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonImmutable|null $updated_at
  */
 #[UseFactory(CandidateProfileFactory::class)]
-#[Fillable(['user_id', 'candidate_number', 'phone', 'last_education', 'registered_on'])]
+#[Fillable([
+    'user_id', 'candidate_number', 'phone', 'last_education', 'registered_on',
+    'city', 'birth_date', 'religion', 'marital_status', 'linkedin_url', 'portfolio_url',
+])]
 class CandidateProfile extends Model
 {
     /** @use HasFactory<CandidateProfileFactory> */
@@ -46,6 +57,9 @@ class CandidateProfile extends Model
     {
         return [
             'registered_on' => 'date',
+            'birth_date' => 'date',
+            'religion' => Religion::class,
+            'marital_status' => MaritalStatus::class,
             'activated_at' => 'datetime',
             'consent_given_at' => 'datetime',
             'anonymized_at' => 'datetime',
@@ -54,7 +68,7 @@ class CandidateProfile extends Model
 
     /**
      * Profil yang boleh diakses: Super Admin semua, HR jika kandidat punya lamaran di
-     * gelombang yang ditugaskan, kandidat hanya profilnya sendiri.
+     * rekrutmen yang ditugaskan, kandidat hanya profilnya sendiri.
      *
      * @param  Builder<self>  $query
      */
@@ -100,5 +114,29 @@ class CandidateProfile extends Model
     public function deletionRequests(): HasMany
     {
         return $this->hasMany(DataDeletionRequest::class);
+    }
+
+    /**
+     * @return HasMany<CandidateEducation, $this>
+     */
+    public function educations(): HasMany
+    {
+        return $this->hasMany(CandidateEducation::class)->orderByDesc('graduation_year')->orderByDesc('id');
+    }
+
+    /**
+     * @return HasMany<CandidateExperience, $this>
+     */
+    public function experiences(): HasMany
+    {
+        return $this->hasMany(CandidateExperience::class)->orderByDesc('started_on');
+    }
+
+    /**
+     * @return HasMany<CandidateDocument, $this>
+     */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(CandidateDocument::class)->orderBy('id');
     }
 }

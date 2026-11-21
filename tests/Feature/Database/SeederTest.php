@@ -30,7 +30,7 @@ class SeederTest extends TestCase
         $admin = User::query()->where('email', 'root@example.test')->sole();
         $this->assertSame(Role::SuperAdmin, $admin->role);
         $this->assertTrue(Hash::check('secret-password', $admin->password));
-        $this->assertSame('2026-10', SystemSetting::valueOf(SystemSetting::CONSENT_POLICY_VERSION));
+        $this->assertSame('2026-11', SystemSetting::valueOf(SystemSetting::CONSENT_POLICY_VERSION));
         $this->assertSame(12, SystemSetting::valueOf(SystemSetting::RETENTION_MONTHS));
     }
 
@@ -93,7 +93,7 @@ class SeederTest extends TestCase
             ));
         });
 
-        // Satu kandidat memiliki lamaran di dua gelombang.
+        // Satu kandidat memiliki lamaran di dua rekrutmen.
         $this->assertSame(1, RecruitmentApplication::query()
             ->selectRaw('candidate_profile_id')
             ->groupBy('candidate_profile_id')

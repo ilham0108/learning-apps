@@ -30,6 +30,17 @@ export {
     CheckCircle2 as CompletedIcon,
     Circle as NotStartedIcon,
     CircleDot as InProgressIcon,
+    Flag as FlagIcon,
+    ListOrdered as QuestionListIcon,
+    Send as SubmitIcon,
+    Check as SavedIcon,
+    LoaderCircle as SavingIcon,
+    RefreshCw as RetryIcon,
+    CloudOff as OfflineIcon,
+    History as HistoryIcon,
+    Lock as LockedIcon,
+    ScrollText as AuditIcon,
+    Download as DownloadIcon,
 } from 'lucide-react';
 
 export const materialTypeIcons: Record<MaterialType, LucideIcon> = {

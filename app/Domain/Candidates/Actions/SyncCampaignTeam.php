@@ -8,7 +8,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Menetapkan HR yang ditugaskan ke gelombang (khusus Super Admin). Mengubah hak akses,
+ * Menetapkan HR yang ditugaskan ke rekrutmen (khusus Super Admin). Mengubah hak akses,
  * sehingga selalu dicatat di audit log.
  */
 class SyncCampaignTeam

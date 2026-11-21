@@ -51,7 +51,7 @@ class CampaignController extends Controller
                 'status' => $filters['status'] ?? null,
             ],
             'canCreate' => $canCreate = $request->user()->can('create', RecruitmentCampaign::class),
-            // Pilihan posisi untuk modal "Buat gelombang".
+            // Pilihan posisi untuk modal "Buat rekrutmen".
             'positions' => $canCreate ? $this->positionOptions() : [],
         ]);
     }
@@ -62,7 +62,7 @@ class CampaignController extends Controller
 
         $campaign = $saveCampaign(null, $request->campaignData(), $request->user());
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Gelombang berhasil dibuat.')]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Rekrutmen berhasil dibuat.')]);
 
         return to_route('admin.campaigns.show', $campaign);
     }
@@ -83,7 +83,7 @@ class CampaignController extends Controller
                 ->groupBy('stage')
                 ->pluck('total', 'stage'),
             'canUpdate' => $canUpdate,
-            // Pilihan posisi untuk modal "Ubah gelombang".
+            // Pilihan posisi untuk modal "Ubah rekrutmen".
             'positions' => $canUpdate ? $this->positionOptions($campaign->position) : [],
             'canManageTeam' => $canManageTeam,
             'hrOptions' => $canManageTeam
@@ -102,7 +102,7 @@ class CampaignController extends Controller
 
         $saveCampaign($campaign, $request->campaignData(), $request->user());
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Gelombang berhasil diperbarui.')]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Rekrutmen berhasil diperbarui.')]);
 
         return to_route('admin.campaigns.show', $campaign);
     }
@@ -119,7 +119,7 @@ class CampaignController extends Controller
     }
 
     /**
-     * Posisi aktif, ditambah posisi yang sedang dipakai gelombang (meski sudah nonaktif).
+     * Posisi aktif, ditambah posisi yang sedang dipakai rekrutmen (meski sudah nonaktif).
      *
      * @return array<int, array{id: string, name: string, department: string}>
      */

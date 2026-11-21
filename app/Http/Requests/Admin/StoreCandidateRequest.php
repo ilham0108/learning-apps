@@ -25,7 +25,7 @@ class StoreCandidateRequest extends FormRequest
     }
 
     /**
-     * Gelombang yang boleh menerima kandidat: dalam lingkup pengguna dan belum ditutup.
+     * Rekrutmen yang boleh menerima kandidat: dalam lingkup pengguna dan belum ditutup.
      *
      * @return Builder<RecruitmentCampaign>
      */
@@ -59,6 +59,6 @@ class StoreCandidateRequest extends FormRequest
      */
     public function attributes(): array
     {
-        return [...CandidateProfileRules::attributes(), 'campaign' => 'gelombang'];
+        return [...CandidateProfileRules::attributes(), 'campaign' => 'rekrutmen'];
     }
 }

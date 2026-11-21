@@ -42,6 +42,7 @@ class ExamResource extends JsonResource
             'multi_select_scoring' => $this->multi_select_scoring->value,
             'result_release' => $this->result_release->value,
             'show_review' => $this->show_review,
+            'results_released_at' => $this->results_released_at?->toIso8601String(),
             'status' => $this->status->value,
             'is_locked' => $this->isLocked(),
             'duplicated_from' => $this->duplicatedFrom === null ? null : [

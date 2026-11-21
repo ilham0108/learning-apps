@@ -10,8 +10,8 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * Filter, pencarian, dan urutan daftar kandidat. Filter gelombang hanya
- * menerima gelombang dalam lingkup pengguna.
+ * Filter, pencarian, dan urutan daftar kandidat. Filter rekrutmen hanya
+ * menerima rekrutmen dalam lingkup pengguna.
  */
 class CandidateIndexRequest extends FormRequest
 {

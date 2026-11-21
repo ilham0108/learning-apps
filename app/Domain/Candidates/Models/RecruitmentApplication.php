@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * Lamaran kandidat pada satu gelombang. Posisi dan departemen mengikuti gelombang.
+ * Lamaran kandidat pada satu rekrutmen. Posisi dan departemen mengikuti rekrutmen.
  *
  * @property int $id
  * @property string $public_id
@@ -51,7 +51,7 @@ class RecruitmentApplication extends Model
     }
 
     /**
-     * Lamaran yang boleh diakses pengguna: Super Admin semua, HR dari gelombang yang
+     * Lamaran yang boleh diakses pengguna: Super Admin semua, HR dari rekrutmen yang
      * ditugaskan, kandidat hanya miliknya sendiri.
      *
      * @param  Builder<self>  $query

@@ -9,8 +9,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Membuat atau mengubah gelombang. HR yang membuat gelombang otomatis ditugaskan
- * ke gelombang tersebut (keputusan K2). Perubahan status dicatat di audit log.
+ * Membuat atau mengubah rekrutmen. HR yang membuat rekrutmen otomatis ditugaskan
+ * ke rekrutmen tersebut (keputusan K2). Perubahan status dicatat di audit log.
  */
 class SaveCampaign
 {

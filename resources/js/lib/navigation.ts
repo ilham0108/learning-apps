@@ -1,21 +1,30 @@
 import { t } from '@/lib/i18n';
 import {
+    AuditIcon,
     CampaignIcon,
+    CandidateIcon,
     CandidatesIcon,
     DashboardIcon,
     ExamIcon,
+    GradingIcon,
     LearningIcon,
     PositionIcon,
     QuestionBankIcon,
+    ReportIcon,
 } from '@/lib/icons';
 import { dashboard } from '@/routes';
 import { dashboard as adminDashboard } from '@/routes/admin';
+import auditLog from '@/routes/admin/audit-log';
 import campaigns from '@/routes/admin/campaigns';
 import candidates from '@/routes/admin/candidates';
 import exams from '@/routes/admin/exams';
+import grading from '@/routes/admin/grading';
+import candidateProfile from '@/routes/candidate-profile';
+import candidateExams from '@/routes/exams';
 import positions from '@/routes/admin/positions';
 import programs from '@/routes/admin/programs';
 import questions from '@/routes/admin/questions';
+import reports from '@/routes/admin/reports';
 import learn from '@/routes/learn';
 import type { NavItem, Role } from '@/types';
 
@@ -38,10 +47,20 @@ export function navigationFor(role: Role): NavItem[] {
                 href: learn.index(),
                 icon: LearningIcon,
             },
+            {
+                title: t('nav.exams'),
+                href: candidateExams.index(),
+                icon: ExamIcon,
+            },
+            {
+                title: t('nav.profile'),
+                href: candidateProfile.edit(),
+                icon: CandidateIcon,
+            },
         ];
     }
 
-    return [
+    const staff: NavItem[] = [
         {
             title: t('nav.dashboard'),
             href: adminDashboard(),
@@ -64,6 +83,11 @@ export function navigationFor(role: Role): NavItem[] {
             icon: ExamIcon,
         },
         {
+            title: t('nav.grading'),
+            href: grading.index(),
+            icon: GradingIcon,
+        },
+        {
             title: t('nav.questions'),
             href: questions.index(),
             icon: QuestionBankIcon,
@@ -78,7 +102,24 @@ export function navigationFor(role: Role): NavItem[] {
             href: positions.index(),
             icon: PositionIcon,
         },
+        {
+            title: t('nav.reports'),
+            href: reports.index(),
+            icon: ReportIcon,
+        },
     ];
+
+    // Audit log hanya untuk Super Admin.
+    return role === 'super_admin'
+        ? [
+              ...staff,
+              {
+                  title: t('nav.auditLog'),
+                  href: auditLog.index(),
+                  icon: AuditIcon,
+              },
+          ]
+        : staff;
 }
 
 export function homeFor(role: Role) {

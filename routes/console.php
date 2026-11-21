@@ -1,8 +1,9 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+// Auto-submit attempt ujian yang melewati deadline (rules Bagian 9).
+Schedule::command('exams:close-expired')->everyMinute()->withoutOverlapping();
+
+// File ekspor laporan berlaku 7 hari; setelah itu file dihapus (risiko R16).
+Schedule::command('exports:prune')->daily();

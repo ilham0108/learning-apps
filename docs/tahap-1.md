@@ -29,7 +29,7 @@ Tim HR membutuhkan satu sistem untuk menyaring calon karyawan melalui **pembelaj
 
 **Masalah yang diselesaikan**
 
-- Kandidat dari beberapa gelombang rekrutmen, posisi, dan departemen perlu dibekali materi yang sama secara terukur.
+- Kandidat dari beberapa rekrutmen, posisi, dan departemen perlu dibekali materi yang sama secara terukur.
 - Ujian harus adil: waktu dikendalikan server, soal dan kunci tidak bocor, riwayat pengerjaan tidak bisa diubah.
 - HR butuh gambaran utuh per kandidat (nilai ujian, progres belajar, wawancara, catatan), bukan satu angka, dan keputusan akhir tetap di tangan manusia.
 
@@ -37,13 +37,13 @@ Tim HR membutuhkan satu sistem untuk menyaring calon karyawan melalui **pembelaj
 
 | Pengguna    | Kebutuhan utama                                                                                  |
 | ----------- | ------------------------------------------------------------------------------------------------ |
-| Super Admin | Mengelola akun HR, menugaskan HR ke gelombang, konfigurasi sistem, melihat semua data, privasi.  |
-| HR          | Mengelola gelombang, kandidat, materi, bank soal, ujian; menilai; mengevaluasi; membuat laporan. |
+| Super Admin | Mengelola akun HR, menugaskan HR ke rekrutmen, konfigurasi sistem, melihat semua data, privasi.  |
+| HR          | Mengelola rekrutmen, kandidat, materi, bank soal, ujian; menilai; mengevaluasi; membuat laporan. |
 | Kandidat    | Belajar materi yang ditugaskan, mengerjakan ujian dengan nyaman (juga di ponsel), melihat hasil. |
 
 **Ukuran keberhasilan MVP**
 
-- HR dapat menjalankan satu gelombang rekrutmen dari awal sampai keputusan akhir tanpa alat lain.
+- HR dapat menjalankan satu rekrutmen dari awal sampai keputusan akhir tanpa alat lain.
 - Kandidat dapat mengerjakan ujian di layar 360 px, refresh di tengah ujian tanpa kehilangan jawaban.
 - Tidak ada jalur bagi kandidat untuk melihat kunci jawaban, data kandidat lain, atau ID internal.
 
@@ -53,8 +53,8 @@ Tim HR membutuhkan satu sistem untuk menyaring calon karyawan melalui **pembelaj
 
 | Domain        | Fitur                                                                                                                                                                                                                        |
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Akses         | Login, logout, lupa password, 2FA untuk Super Admin dan HR, aktivasi akun kandidat lewat tautan, persetujuan pemrosesan data, kelola akun HR, penugasan HR ke gelombang, nonaktifkan akun.                                   |
-| Rekrutmen     | Master departemen dan posisi; gelombang (draft/open/closed); kandidat (CRUD, cari, filter, pagination server, nonaktifkan); lamaran per gelombang; tahap rekrutmen + riwayat; catatan internal; form evaluasi + rekomendasi. |
+| Akses         | Login, logout, lupa password, 2FA untuk Super Admin dan HR, aktivasi akun kandidat lewat tautan, persetujuan pemrosesan data, kelola akun HR, penugasan HR ke rekrutmen, nonaktifkan akun.                                   |
+| Rekrutmen     | Master departemen dan posisi; rekrutmen (draft/open/closed); kandidat (CRUD, cari, filter, pagination server, nonaktifkan); lamaran per rekrutmen; tahap rekrutmen + riwayat; catatan internal; form evaluasi + rekomendasi. |
 | Pembelajaran  | Program (draft/published/archived), modul dan materi berurutan (artikel, PDF, gambar, video embed/unggah, tautan), wajib/opsional, penugasan program, progres per materi, akses file privat.                                 |
 | Bank soal     | Kategori; soal 6 jenis (MC, multi-select, benar/salah, isian singkat, esai, studi kasus); cari dan filter; arsip; riwayat pemakaian; versioning.                                                                             |
 | Ujian         | Konfigurasi lengkap (Bagian 8 rules), penugasan dengan jadwal khusus per individu, kunci ujian setelah ada attempt, duplikasi ujian.                                                                                         |
@@ -71,7 +71,7 @@ Tim HR membutuhkan satu sistem untuk menyaring calon karyawan melalui **pembelaj
 | Impor kandidat dari CSV                   | Pembuatan kandidat sudah lewat satu action yang bisa dipanggil berulang.                                                            |
 | Undangan dan notifikasi email             | Aktivasi akun sudah memakai token; di fase 2 tinggal dikirim lewat email (queue).                                                   |
 | Ekspor Excel                              | Ekspor memakai kelas generator per format; tabel `report_exports` punya kolom `format`.                                             |
-| Perbandingan antar-gelombang              | Semua data hasil sudah memiliki relasi ke gelombang.                                                                                |
+| Perbandingan antar-rekrutmen              | Semua data hasil sudah memiliki relasi ke rekrutmen.                                                                                |
 | Aturan durasi tonton video                | `material_progress` punya kolom `watched_seconds` (belum dipakai).                                                                  |
 | Nilai parsial lanjutan                    | Aturan penilaian disimpan per soal di snapshot (`scoring_rule`), bukan hardcode.                                                    |
 | Status rekrutmen yang dapat dikonfigurasi | Tahap disimpan sebagai string berindeks; enum PHP menjadi satu-satunya sumber nilai sehingga bisa diganti tabel tanpa migrasi data. |
@@ -103,9 +103,9 @@ Tim HR membutuhkan satu sistem untuk menyaring calon karyawan melalui **pembelaj
 | T7  | Sanitasi HTML memakai **`symfony/html-sanitizer`** dengan allowlist tag; editor teks kaya di frontend memakai **TipTap**.                                                                                                          | Dipelihara aktif, konfigurasi eksplisit.                                                                            |
 | T8  | `public_id` bertipe ULID `CHAR(26)` lewat trait bersama `HasPublicId` (memakai `HasUlids` + `uniqueIds()` + `getRouteKeyName()`).                                                                                                  | Rules Bagian 13.                                                                                                    |
 | T9  | Teks antarmuka disimpan di kamus TypeScript `resources/js/i18n/id.ts` dengan helper `t()` bertipe; pesan backend di `lang/id/*.php`.                                                                                               | Tanpa library tambahan; kunci yang salah tertangkap `tsc`.                                                          |
-| T10 | Departemen dan posisi menjadi **tabel master**, bukan teks bebas.                                                                                                                                                                  | Dipakai di gelombang, program, penugasan, dan filter laporan; mencegah variasi penulisan.                           |
+| T10 | Departemen dan posisi menjadi **tabel master**, bukan teks bebas.                                                                                                                                                                  | Dipakai di rekrutmen, program, penugasan, dan filter laporan; mencegah variasi penulisan.                           |
 | T11 | Aktivasi akun kandidat: HR membuat akun → sistem membuat **tautan aktivasi** (token reset password, berlaku 72 jam) yang ditampilkan sekali untuk disalin HR.                                                                      | Email baru fase 2; HR tidak pernah mengetahui password kandidat. Lihat [K1](#15-keputusan-yang-perlu-dikonfirmasi). |
-| T12 | Penugasan ke "posisi" atau "gelombang" dimaterialisasi saat itu juga menjadi baris per kandidat; kandidat yang ditambahkan kemudian **tidak** ikut otomatis (HR dapat menjalankan ulang penugasan; baris yang sudah ada dilewati). | Rules Bagian 6 dan 8: baris per kandidat. Perilaku eksplisit, mudah diaudit.                                        |
+| T12 | Penugasan ke "posisi" atau "rekrutmen" dimaterialisasi saat itu juga menjadi baris per kandidat; kandidat yang ditambahkan kemudian **tidak** ikut otomatis (HR dapat menjalankan ulang penugasan; baris yang sudah ada dilewati). | Rules Bagian 6 dan 8: baris per kandidat. Perilaku eksplisit, mudah diaudit.                                        |
 
 ### Batasan MySQL 5.7 dan cara mengatasinya
 
@@ -130,7 +130,7 @@ flowchart LR
         MW[Middleware<br/>auth, role, consent,<br/>throttle, active account]
         C[Controller tipis]
         FR[Form Request<br/>validasi + resolve public_id]
-        PO[Policy + query scope<br/>lingkup gelombang]
+        PO[Policy + query scope<br/>lingkup rekrutmen]
         A[Action / Service<br/>per domain]
         RS[API Resource / DTO<br/>hanya public_id]
         J[Queue jobs<br/>ekspor, anonimisasi]
@@ -155,8 +155,8 @@ flowchart LR
 | Domain         | Isi                                                                                                   |
 | -------------- | ----------------------------------------------------------------------------------------------------- |
 | `Shared`       | Trait `HasPublicId`, sanitasi HTML, audit log, helper waktu, enum `Role`.                             |
-| `Access`       | User, peran, penugasan HR ke gelombang, persetujuan data, aktivasi akun, permintaan penghapusan data. |
-| `Candidates`   | Departemen, posisi, gelombang, profil kandidat, lamaran, tahap + riwayat, catatan internal, evaluasi. |
+| `Access`       | User, peran, penugasan HR ke rekrutmen, persetujuan data, aktivasi akun, permintaan penghapusan data. |
+| `Candidates`   | Departemen, posisi, rekrutmen, profil kandidat, lamaran, tahap + riwayat, catatan internal, evaluasi. |
 | `Learning`     | Program, modul, materi, file materi, penugasan program, progres.                                      |
 | `QuestionBank` | Kategori, soal, pilihan, jawaban diterima, versioning.                                                |
 | `Exams`        | Ujian, soal ujian, penugasan ujian, mesin attempt, snapshot, penilaian, publikasi hasil.              |
@@ -240,7 +240,7 @@ erDiagram
     users ||--o| candidate_profiles : "punya (role candidate)"
     users }o--o{ recruitment_campaigns : "campaign_user (HR)"
     departments ||--o{ positions : memiliki
-    positions ||--o{ recruitment_campaigns : "posisi gelombang"
+    positions ||--o{ recruitment_campaigns : "posisi rekrutmen"
     candidate_profiles ||--o{ recruitment_applications : melamar
     recruitment_campaigns ||--o{ recruitment_applications : menampung
     recruitment_applications ||--o{ application_stage_histories : riwayat
@@ -426,7 +426,7 @@ erDiagram
     }
 ```
 
-Constraint penting: `UNIQUE(learning_program_id, recruitment_application_id)`; `UNIQUE(candidate_profile_id, learning_material_id)`. Progres disimpan per kandidat (bukan per lamaran), sehingga materi yang sama tidak perlu dipelajari ulang di gelombang lain. Persentase progres = materi wajib aktif yang `completed_at`-nya terisi ÷ jumlah materi wajib aktif saat ini; dihitung dengan agregasi query.
+Constraint penting: `UNIQUE(learning_program_id, recruitment_application_id)`; `UNIQUE(candidate_profile_id, learning_material_id)`. Progres disimpan per kandidat (bukan per lamaran), sehingga materi yang sama tidak perlu dipelajari ulang di rekrutmen lain. Persentase progres = materi wajib aktif yang `completed_at`-nya terisi ÷ jumlah materi wajib aktif saat ini; dihitung dengan agregasi query.
 
 ### 6.3 Bank soal dan ujian
 
@@ -690,7 +690,7 @@ Tabel bawaan Laravel tetap: `sessions`, `cache`, `cache_locks`, `jobs`, `job_bat
 
 ## 7. Daftar halaman dan role
 
-Legenda: **SA** = Super Admin, **HR** = HR, **K** = Kandidat. ✓ = boleh; **L** = hanya data dalam gelombang yang ditugaskan; **S** = hanya miliknya sendiri; – = tidak boleh (403/404).
+Legenda: **SA** = Super Admin, **HR** = HR, **K** = Kandidat. ✓ = boleh; **L** = hanya data dalam rekrutmen yang ditugaskan; **S** = hanya miliknya sendiri; – = tidak boleh (403/404).
 
 ### Umum dan autentikasi
 
@@ -708,8 +708,8 @@ Legenda: **SA** = Super Admin, **HR** = HR, **K** = Kandidat. ✓ = boleh; **L**
 | Halaman                                          | URL                                | SA  | HR                                                                           |
 | ------------------------------------------------ | ---------------------------------- | --- | ---------------------------------------------------------------------------- |
 | Dashboard HR                                     | `/admin`                           | ✓   | L                                                                            |
-| Gelombang: daftar, buat, ubah, detail            | `/admin/campaigns/...`             | ✓   | L (lihat & ubah yang ditugaskan; buat baru = otomatis ditugaskan ke pembuat) |
-| Penugasan HR ke gelombang                        | `/admin/campaigns/{c}/team`        | ✓   | –                                                                            |
+| Rekrutmen: daftar, buat, ubah, detail            | `/admin/campaigns/...`             | ✓   | L (lihat & ubah yang ditugaskan; buat baru = otomatis ditugaskan ke pembuat) |
+| Penugasan HR ke rekrutmen                        | `/admin/campaigns/{c}/team`        | ✓   | –                                                                            |
 | Departemen & posisi                              | `/admin/positions`                 | ✓   | ✓                                                                            |
 | Kandidat: daftar, buat, ubah, detail             | `/admin/candidates/...`            | ✓   | L                                                                            |
 | Lamaran: tahap, riwayat, catatan, evaluasi       | `/admin/applications/{a}`          | ✓   | L                                                                            |
@@ -757,6 +757,7 @@ Semua memakai sesi web + CSRF, `public_id` attempt di URL, ID soal/pilihan berup
 | GET    | `/attempts/{attempt}/state`           | Soal (tanpa kunci), jawaban tersimpan, tanda ragu, posisi, `deadline_at`, `server_now` | 30/menit   |
 | PUT    | `/attempts/{attempt}/answers/{token}` | Autosave satu jawaban (`client_revision` menolak data lama)                            | 120/menit  |
 | GET    | `/attempts/{attempt}/clock`           | Sinkronisasi waktu (`server_now`, `deadline_at`, status)                               | 30/menit   |
+| POST   | `/attempts/{attempt}/position`        | Simpan soal yang sedang dibuka (pemulihan posisi, kunci soal pada navigasi maju saja)  | 120/menit  |
 | POST   | `/attempts/{attempt}/events`          | Log pindah tab / kembali aktif                                                         | 60/menit   |
 | POST   | `/attempts/{attempt}/submit`          | Submit idempotent; mengembalikan status final yang sama jika diulang                   | 10/menit   |
 
@@ -764,7 +765,7 @@ Setiap endpoint menjalankan "cek kedaluwarsa saat akses": jika `now() >= deadlin
 
 ## 9. Matriks hak akses
 
-Legenda sama dengan Bagian 7. Matriks ini menjadi dasar tes otorisasi (setiap sel = minimal satu tes; sel **L** diuji untuk gelombang yang ditugaskan dan yang **tidak** ditugaskan → 404).
+Legenda sama dengan Bagian 7. Matriks ini menjadi dasar tes otorisasi (setiap sel = minimal satu tes; sel **L** diuji untuk rekrutmen yang ditugaskan dan yang **tidak** ditugaskan → 404).
 
 | Domain    | Aksi                                               | SA            | HR                 | K                                                         |
 | --------- | -------------------------------------------------- | ------------- | ------------------ | --------------------------------------------------------- |
@@ -773,13 +774,13 @@ Legenda sama dengan Bagian 7. Matriks ini menjadi dasar tes otorisasi (setiap se
 | Akun      | Aktifkan/kelola 2FA sendiri                        | ✓             | ✓                  | –                                                         |
 | Sistem    | Ubah konfigurasi (kebijakan privasi, retensi)      | ✓             | –                  | –                                                         |
 | Sistem    | Lihat audit log                                    | ✓             | –                  | –                                                         |
-| Gelombang | Lihat daftar & detail                              | ✓             | L                  | –                                                         |
-| Gelombang | Buat                                               | ✓             | ✓                  | –                                                         |
-| Gelombang | Ubah, buka, tutup                                  | ✓             | L                  | –                                                         |
-| Gelombang | Tugaskan/lepas HR                                  | ✓             | –                  | –                                                         |
+| Rekrutmen | Lihat daftar & detail                              | ✓             | L                  | –                                                         |
+| Rekrutmen | Buat                                               | ✓             | ✓                  | –                                                         |
+| Rekrutmen | Ubah, buka, tutup                                  | ✓             | L                  | –                                                         |
+| Rekrutmen | Tugaskan/lepas HR                                  | ✓             | –                  | –                                                         |
 | Master    | Kelola departemen & posisi                         | ✓             | ✓                  | –                                                         |
 | Kandidat  | Lihat daftar, cari, filter                         | ✓             | L                  | –                                                         |
-| Kandidat  | Buat kandidat + lamaran di gelombang               | ✓             | L                  | –                                                         |
+| Kandidat  | Buat kandidat + lamaran di rekrutmen               | ✓             | L                  | –                                                         |
 | Kandidat  | Ubah data, nonaktifkan                             | ✓             | L                  | –                                                         |
 | Kandidat  | Buat tautan aktivasi ulang                         | ✓             | L                  | –                                                         |
 | Kandidat  | Lihat & ubah profil sendiri (field terbatas)       | –             | –                  | S                                                         |
@@ -813,7 +814,7 @@ Legenda sama dengan Bagian 7. Matriks ini menjadi dasar tes otorisasi (setiap se
 | Privasi   | Ajukan penghapusan data                            | –             | –                  | S                                                         |
 | Privasi   | Proses permintaan penghapusan                      | ✓             | –                  | –                                                         |
 
-Catatan: kandidat dengan lamaran di beberapa gelombang hanya terlihat oleh HR melalui lamaran dalam gelombang HR tersebut; profil dasarnya terlihat, tetapi lamaran, attempt, catatan, dan evaluasi dari gelombang lain tidak.
+Catatan: kandidat dengan lamaran di beberapa rekrutmen hanya terlihat oleh HR melalui lamaran dalam rekrutmen HR tersebut; profil dasarnya terlihat, tetapi lamaran, attempt, catatan, dan evaluasi dari rekrutmen lain tidak.
 
 ## 10. Diagram status
 
@@ -821,7 +822,7 @@ Catatan: kandidat dengan lamaran di beberapa gelombang hanya terlihat oleh HR me
 
 ```mermaid
 stateDiagram-v2
-    [*] --> invited: HR menambahkan kandidat ke gelombang
+    [*] --> invited: HR menambahkan kandidat ke rekrutmen
     invited --> registered: kandidat aktivasi akun + setuju kebijakan (otomatis)
     registered --> under_review: HR
     under_review --> shortlisted: HR
@@ -840,8 +841,8 @@ stateDiagram-v2
 
 - Setiap perubahan menulis `application_stage_histories` (siapa, kapan, dari, ke, alasan) dan `activity_logs`.
 - Transisi yang tidak ada di diagram ditolak oleh enum (`RecruitmentStage::canTransitionTo()`).
-- Kandidat yang sudah `registered` di satu gelombang dan ditambahkan ke gelombang baru langsung berada di `registered` untuk lamaran baru (akun sudah aktif).
-- Gelombang `closed` menolak perubahan tahap kecuali oleh SA.
+- Kandidat yang sudah `registered` di satu rekrutmen dan ditambahkan ke rekrutmen baru langsung berada di `registered` untuk lamaran baru (akun sudah aktif).
+- Rekrutmen `closed` menolak perubahan tahap kecuali oleh SA.
 
 ### 10.2 Attempt ujian
 
@@ -890,12 +891,12 @@ Kunci jawaban dan pembahasan hanya dikirim jika nilai sudah boleh dilihat **dan*
 
 ```mermaid
 flowchart TD
-    A[SA membuat akun HR<br/>dan menugaskan ke gelombang] --> B[HR membuat / membuka gelombang<br/>posisi + periode]
+    A[SA membuat akun HR<br/>dan menugaskan ke rekrutmen] --> B[HR membuat / membuka rekrutmen<br/>posisi + periode]
     B --> C[HR menambahkan kandidat<br/>akun + lamaran = invited]
     C --> D[Sistem membuat tautan aktivasi<br/>HR menyalin & mengirim manual]
     B --> E[HR menyiapkan program,<br/>modul, materi → publish]
     B --> F[HR menyiapkan bank soal<br/>dan ujian → publish]
-    E --> G[Tugaskan program ke<br/>individu / gelombang / posisi / pilihan]
+    E --> G[Tugaskan program ke<br/>individu / rekrutmen / posisi / pilihan]
     F --> H[Tugaskan ujian + jadwal khusus]
     G --> I[Pantau progres belajar<br/>di dashboard]
     H --> J[Pantau attempt berjalan]
@@ -937,7 +938,7 @@ Aturan ini tidak ditulis eksplisit di `rules.md`, tetapi diperlukan agar impleme
 | No  | Aturan                                                                                                                                                                                                                                                  |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | B1  | Nomor kandidat: `CAND-{YYYY}-{6 digit urut}`, dibuat di dalam transaction dengan lock pada baris counter per tahun.                                                                                                                                     |
-| B2  | Satu email = satu akun. Menambahkan email yang sudah terdaftar sebagai kandidat ke gelombang lain membuat lamaran baru, bukan akun baru.                                                                                                                |
+| B2  | Satu email = satu akun. Menambahkan email yang sudah terdaftar sebagai kandidat ke rekrutmen lain membuat lamaran baru, bukan akun baru.                                                                                                                |
 | B3  | Menonaktifkan kandidat: login ditolak, attempt `in_progress` langsung di-auto-submit, data tetap ada.                                                                                                                                                   |
 | B4  | Jadwal efektif penugasan ujian = override per individu jika ada, jika tidak = jadwal ujian. `deadline_at = min(started_at + durasi, waktu tutup efektif)`.                                                                                              |
 | B5  | Jumlah percobaan efektif = `max_attempts_override` ?? `exams.max_attempts`. Attempt `expired` ikut dihitung.                                                                                                                                            |
@@ -950,7 +951,7 @@ Aturan ini tidak ditulis eksplisit di `rules.md`, tetapi diperlukan agar impleme
 | B12 | Satu sesi aktif per attempt: saat runner dibuka, token sesi baru disimpan (hash). Permintaan dari token lama ditolak dengan pesan "ujian dibuka di perangkat/tab lain" dan dicatat sebagai `session_replaced`.                                          |
 | B13 | Autosave memakai `client_revision` per jawaban; server hanya menerima revisi yang lebih baru, sehingga antrean kirim ulang tidak menimpa jawaban yang lebih baru.                                                                                       |
 | B14 | Navigasi `forward_only`: server menolak penyimpanan untuk soal sebelum posisi terjauh yang sudah dilewati.                                                                                                                                              |
-| B15 | Retensi: job harian menganonimkan data pribadi kandidat yang **semua** lamarannya berada di gelombang yang ditutup > 12 bulan (nama → "Kandidat Anonim", email/telepon dihapus, catatan internal & jawaban esai teks dihapus); nilai dan agregat tetap. |
+| B15 | Retensi: job harian menganonimkan data pribadi kandidat yang **semua** lamarannya berada di rekrutmen yang ditutup > 12 bulan (nama → "Kandidat Anonim", email/telepon dihapus, catatan internal & jawaban esai teks dihapus); nilai dan agregat tetap. |
 | B16 | Permintaan penghapusan disetujui SA → proses anonimisasi yang sama dijalankan segera; ditolak → wajib alasan.                                                                                                                                           |
 
 ## 13. Risiko teknis dan keamanan
@@ -986,7 +987,7 @@ Setiap tahap diakhiri dengan Definition of Done di `rules.md` Bagian 17 (`migrat
 | 1     | Dokumen ini.                                                                                                                                                                                                                                                                                                                                                     | —                                                      |
 | 2     | Semua migration, model, relasi, enum, factory; trait `HasPublicId`; seeder produksi (role + SA dari env) dan seeder demo; kolom generated untuk attempt aktif; tes skema (unique constraint, relasi).                                                                                                                                                            | `migrate:fresh --seed` menghasilkan data demo lengkap. |
 | 3     | Role pada user, middleware role/aktif/consent, Policy dasar + scope `visibleTo`, aktivasi kandidat, halaman persetujuan, layout HR (sidebar) & kandidat, peta ikon, kamus i18n, komponen dasar (tabel server-side, badge status, empty/error/loading state, dialog konfirmasi), Vitest + RTL disiapkan. Tes matriks akses dasar dan tes "tidak ada ID internal". | Login sebagai tiga role dengan navigasi masing-masing. |
-| 4     | Departemen & posisi, gelombang + penugasan HR, kandidat + lamaran, tahap + riwayat, catatan internal, form evaluasi.                                                                                                                                                                                                                                             | HR mengelola gelombang dan kandidat.                   |
+| 4     | Departemen & posisi, rekrutmen + penugasan HR, kandidat + lamaran, tahap + riwayat, catatan internal, form evaluasi.                                                                                                                                                                                                                                             | HR mengelola rekrutmen dan kandidat.                   |
 | 5     | Program, modul, materi (semua jenis), unggah file privat + URL bertanda tangan, penugasan program, progres kandidat, halaman belajar kandidat.                                                                                                                                                                                                                   | Kandidat belajar dan progres tercatat.                 |
 | 6     | Kategori & bank soal (6 jenis, versioning), ujian (konfigurasi, soal, bobot, kunci, duplikasi), penugasan ujian + jadwal khusus.                                                                                                                                                                                                                                 | HR membuat dan menugaskan ujian.                       |
 | 7     | Mesin attempt (start, snapshot, state, autosave, clock, events, submit, auto-submit job), runner React (timer, navigasi, tandai ragu, antrean simpan, konfirmasi submit), grader per jenis soal, nilai berbobot & per kategori, antrean penilaian manual, kebijakan percobaan & publikasi, halaman hasil.                                                        | Alur ujian lengkap end-to-end.                         |
@@ -1003,14 +1004,18 @@ Hanya keputusan yang memengaruhi alur bisnis. Jika tidak ada jawaban, default di
 | No  | Pertanyaan                                                                                                                              | Default yang dipakai                                                                        |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | K1  | Tanpa email di MVP, bagaimana kandidat menerima akses? Tautan aktivasi yang disalin HR, atau password sementara yang ditampilkan ke HR? | **Tautan aktivasi** (berlaku 72 jam, sekali pakai). HR tidak pernah tahu password kandidat. |
-| K2  | Apakah HR boleh membuat gelombang baru sendiri, atau hanya Super Admin?                                                                 | **HR boleh**, dan otomatis ditugaskan ke gelombang yang dibuatnya.                          |
+| K2  | Apakah HR boleh membuat rekrutmen baru sendiri, atau hanya Super Admin?                                                                 | **HR boleh**, dan otomatis ditugaskan ke rekrutmen yang dibuatnya.                          |
 | K3  | Kriteria evaluasi kandidat: cukup lima kriteria tetap (ujian, belajar, wawancara, sikap, lainnya) dengan skor 1–5?                      | **Ya**, lima kriteria tetap + rekomendasi akhir 4 tingkat.                                  |
 
 ## 16. Riwayat perubahan
 
-| Tanggal    | Perubahan                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-10-28 | Versi awal Tahap 1                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| 2026-10-28 | Tahap 2: soft delete dihapus dari rancangan (diganti `is_active`, anonimisasi, arsip). Model `User` tetap di `app/Models` karena dipakai Fortify; model lain di `app/Domain/<Domain>/Models`. Tambahan kolom: `questions.position` (urutan sub-soal studi kasus), `exam_attempts.furthest_position` dan `navigation` (aturan B14), `activity_logs.user_agent`, `report_exports.error_message`. Tabel tambahan `candidate_number_sequences` (aturan B1). ULID disimpan dalam huruf kecil (bawaan Laravel). |
-| 2026-10-28 | Tahap 3: token aktivasi disimpan di tabel terpisah `account_activation_tokens` agar tidak bentrok dengan token reset password. Komponen tabel server-side (sorting + pagination) dipindah ke Tahap 4 bersama halaman daftar pertama yang memakainya. Penghapusan akun mandiri bawaan starter kit dihapus; kandidat tidak dapat mengubah email sendiri. Halaman `/` dialihkan ke `/dashboard`.                                                                                                             |
-| 2026-10-28 | Tahap 6: pilihan jawaban disimpan dan ditampilkan sebagai teks biasa (bukan HTML). Bobot studi kasus di ujian = jumlah bobot sub-soal dan tidak dapat diubah per ujian. Saat soal mendapat versi baru, ujian yang belum terkunci otomatis dialihkan ke versi baru (bukan ditawarkan). Pemilih soal ujian memakai endpoint JSON khusus HR tanpa kunci jawaban.                                                                                                                                             |
+| Tanggal    | Perubahan                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-28 | Versi awal Tahap 1                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| 2026-10-28 | Tahap 2: soft delete dihapus dari rancangan (diganti `is_active`, anonimisasi, arsip). Model `User` tetap di `app/Models` karena dipakai Fortify; model lain di `app/Domain/<Domain>/Models`. Tambahan kolom: `questions.position` (urutan sub-soal studi kasus), `exam_attempts.furthest_position` dan `navigation` (aturan B14), `activity_logs.user_agent`, `report_exports.error_message`. Tabel tambahan `candidate_number_sequences` (aturan B1). ULID disimpan dalam huruf kecil (bawaan Laravel).                                                                                                                                                                                                                                          |
+| 2026-10-28 | Tahap 3: token aktivasi disimpan di tabel terpisah `account_activation_tokens` agar tidak bentrok dengan token reset password. Komponen tabel server-side (sorting + pagination) dipindah ke Tahap 4 bersama halaman daftar pertama yang memakainya. Penghapusan akun mandiri bawaan starter kit dihapus; kandidat tidak dapat mengubah email sendiri. Halaman `/` dialihkan ke `/dashboard`.                                                                                                                                                                                                                                                                                                                                                      |
+| 2026-10-28 | Tahap 6: pilihan jawaban disimpan dan ditampilkan sebagai teks biasa (bukan HTML). Bobot studi kasus di ujian = jumlah bobot sub-soal dan tidak dapat diubah per ujian. Saat soal mendapat versi baru, ujian yang belum terkunci otomatis dialihkan ke versi baru (bukan ditawarkan). Pemilih soal ujian memakai endpoint JSON khusus HR tanpa kunci jawaban.                                                                                                                                                                                                                                                                                                                                                                                      |
+| 2026-11-10 | Tahap 7: kolom `exam_attempts.current_position` dan endpoint `POST /attempts/{attempt}/position` agar posisi soal pulih dari server setelah refresh. Token sesi runner dikirim lewat header `X-Attempt-Session`. Rate limit memakai named limiter per endpoint (`throttle:N,1` bawaan berbagi satu kunci per pengguna, sehingga autosave akan menghabiskan jatah submit). Saat submit, soal yang tidak dijawab tetap mendapat baris jawaban bernilai 0; esai/isian singkat kosong langsung 0 tanpa penilaian manual. Kebijakan "terakhir" memakai attempt selesai terakhir (bisa masih menunggu penilaian), "tertinggi" hanya dari attempt yang sudah final. Publikasi manual oleh HR juga membuka hasil untuk kebijakan "setelah ujian ditutup".  |
+| 2026-11-20 | Istilah "gelombang rekrutmen" diganti menjadi "rekrutmen" di seluruh antarmuka, pesan, dan dokumen agar tidak ambigu. Nama tabel dan kelas (`recruitment_campaigns`, `RecruitmentCampaign`) tidak berubah.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| 2026-11-21 | Halaman data diri kandidat (`/profile`): data pribadi (termasuk kota, tanggal lahir, agama, status pernikahan atas permintaan pemilik produk), riwayat pendidikan, pengalaman kerja, tautan, serta dokumen CV, foto KTP, foto profil, dan sertifikat (disk privat, URL bertanda tangan 10 menit, maks. 5 MB). Tabel baru `candidate_educations`, `candidate_experiences`, `candidate_documents`. Profil wajib lengkap sebelum ujian dimulai (status ketersediaan `profile_incomplete`). Pembukaan foto KTP oleh staf dicatat di audit log. Teks persetujuan diperbarui dan versi kebijakan naik ke `2026-11`, sehingga kandidat menyetujui ulang. Anonimisasi Tahap 10 wajib menghapus data dan file ini.                                          |
+| 2026-11-21 | Tahap 9: 8 laporan (rules Bagian 12) sebagai kelas di `app/Domain/Reporting/Reports`; pratinjau dan file ekspor memakai query yang sama. Lingkup lamaran dipindah ke `ApplicationScope` dan dipakai bersama dashboard HR. Ekspor CSV (koma, BOM UTF-8) diproses job `GenerateReportExport` per 500 baris, disimpan di disk privat, hanya bisa diunduh peminta (termasuk Super Admin tidak bisa mengunduh milik orang lain), kedaluwarsa 7 hari (`exports:prune` harian). Sel yang diawali `= + - @` diberi apostrof untuk mencegah formula injection. Audit log: `export.created`, `export.downloaded`; halaman audit log khusus Super Admin. Subquery berkorelasi menaruh referensi tabel luar di WHERE karena MySQL 5.7 menolaknya di klausa ON. |

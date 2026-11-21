@@ -67,7 +67,7 @@ class User extends Authenticatable
     }
 
     /**
-     * Gelombang rekrutmen yang ditugaskan kepada HR ini.
+     * Rekrutmen yang ditugaskan kepada HR ini.
      *
      * @return BelongsToMany<RecruitmentCampaign, $this>
      */

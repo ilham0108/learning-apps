@@ -1,5 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Copy, Pencil } from 'lucide-react';
+import { Copy, ListChecks, Megaphone, Pencil } from 'lucide-react';
 import { useState } from 'react';
 import { ConfirmDialog } from '@/components/app/confirm-dialog';
 import { ExamStatusBadge, LockedBadge } from '@/components/app/exam-badges';
@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { formatDateTime } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import exams from '@/routes/admin/exams';
+import examAttempts from '@/routes/admin/exams/attempts';
 import type {
     CategoryOption,
     ExamAssignmentRow,
@@ -26,6 +27,7 @@ type Props = {
     assignments: ExamAssignmentRow[];
     assignOptions: AssignOptions;
     categories: CategoryOption[];
+    attemptStats: { total: number; pending_grading: number };
 };
 
 export default function ExamShow({
@@ -34,10 +36,13 @@ export default function ExamShow({
     assignments,
     assignOptions,
     categories,
+    attemptStats,
 }: Props) {
     const { displayTimezone } = usePage().props;
     const [confirmDuplicate, setConfirmDuplicate] = useState(false);
     const [duplicating, setDuplicating] = useState(false);
+    const [confirmRelease, setConfirmRelease] = useState(false);
+    const [releasing, setReleasing] = useState(false);
 
     const facts: [string, string][] = [
         [t('admin.exams.fields.type'), t(`status.examType.${exam.type}`)],
@@ -164,6 +169,50 @@ export default function ExamShow({
                     </CardContent>
                 </Card>
 
+                <Card>
+                    <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="space-y-1">
+                            <h2 className="font-semibold">
+                                {t('admin.exams.attemptStats.title')}
+                            </h2>
+                            <p className="text-sm text-muted-foreground">
+                                {t('admin.exams.attemptStats.summary', {
+                                    total: attemptStats.total,
+                                    pending: attemptStats.pending_grading,
+                                })}
+                            </p>
+                            {exam.results_released_at && (
+                                <p className="text-sm text-muted-foreground">
+                                    {t('admin.exams.release.releasedAt', {
+                                        date: formatDateTime(
+                                            exam.results_released_at,
+                                            displayTimezone,
+                                        ),
+                                    })}
+                                </p>
+                            )}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {exam.result_release !== 'immediate' &&
+                                !exam.results_released_at && (
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setConfirmRelease(true)}
+                                    >
+                                        <Megaphone aria-hidden="true" />
+                                        {t('admin.exams.release.action')}
+                                    </Button>
+                                )}
+                            <Button asChild variant="outline">
+                                <Link href={examAttempts.index(exam.id)}>
+                                    <ListChecks aria-hidden="true" />
+                                    {t('admin.exams.attemptStats.view')}
+                                </Link>
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+
                 <ExamQuestions
                     exam={exam}
                     rows={questions}
@@ -176,6 +225,25 @@ export default function ExamShow({
                     options={assignOptions}
                 />
             </div>
+
+            <ConfirmDialog
+                open={confirmRelease}
+                onOpenChange={setConfirmRelease}
+                title={t('admin.exams.release.title')}
+                description={t('admin.exams.release.description')}
+                confirmLabel={t('admin.exams.release.action')}
+                processing={releasing}
+                onConfirm={() =>
+                    router.visit(exams.releaseResults(exam.id), {
+                        preserveScroll: true,
+                        onStart: () => setReleasing(true),
+                        onFinish: () => {
+                            setReleasing(false);
+                            setConfirmRelease(false);
+                        },
+                    })
+                }
+            />
 
             <ConfirmDialog
                 open={confirmDuplicate}

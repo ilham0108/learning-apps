@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Auth\Access\Response;
 
 /**
- * Data di luar lingkup gelombang dikembalikan sebagai 404, bukan 403,
+ * Data di luar lingkup rekrutmen dikembalikan sebagai 404, bukan 403,
  * agar keberadaan data milik HR lain tidak terungkap.
  */
 class RecruitmentCampaignPolicy
@@ -33,7 +33,7 @@ class RecruitmentCampaignPolicy
     }
 
     /**
-     * Menugaskan atau melepas HR dari gelombang hanya oleh Super Admin.
+     * Menugaskan atau melepas HR dari rekrutmen hanya oleh Super Admin.
      */
     public function manageTeam(User $user, RecruitmentCampaign $campaign): Response
     {

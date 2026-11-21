@@ -42,7 +42,7 @@ class ConsentTest extends TestCase
 
         $profile->refresh();
         $this->assertNotNull($profile->consent_given_at);
-        $this->assertSame('2026-10', $profile->consent_policy_version);
+        $this->assertSame('2026-11', $profile->consent_policy_version);
         $this->actingAs($profile->user)->get(route('dashboard'))->assertOk();
     }
 

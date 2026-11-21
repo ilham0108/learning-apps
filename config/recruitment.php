@@ -41,7 +41,7 @@ return [
     */
 
     'defaults' => [
-        'consent_policy_version' => '2026-10',
+        'consent_policy_version' => '2026-11',
         'retention_months' => 12,
     ],
 

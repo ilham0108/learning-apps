@@ -146,7 +146,7 @@ class CandidateManagementTest extends TestCase
         $this->get(route('admin.candidates.index', ['sort' => 'name', 'direction' => 'desc']))->assertInertia(fn (Assert $page) => $page
             ->where('candidates.data.0.name', 'Zzqx Vortanen'));
 
-        // Gelombang di luar lingkup tidak dapat dipakai sebagai filter.
+        // Rekrutmen di luar lingkup tidak dapat dipakai sebagai filter.
         $this->get(route('admin.candidates.index', ['campaign' => RecruitmentCampaign::factory()->create()->public_id]))
             ->assertSessionHasErrors('campaign');
         $this->get(route('admin.candidates.index', ['sort' => 'password']))->assertSessionHasErrors('sort');

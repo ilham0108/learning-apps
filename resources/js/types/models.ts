@@ -357,6 +357,7 @@ export type ExamDetail = {
     multi_select_scoring: MultiSelectScoring;
     result_release: ResultRelease;
     show_review: boolean;
+    results_released_at: string | null;
     status: ExamStatus;
     is_locked: boolean;
     duplicated_from: { id: string; title: string } | null;
@@ -393,4 +394,221 @@ export type ExamAssignmentRow = {
         max_attempts: number | null;
     };
     attempts_count: number;
+};
+
+export type AttemptStatus =
+    | 'in_progress'
+    | 'submitted'
+    | 'auto_submitted'
+    | 'expired';
+export type GradingStatus = 'pending_manual' | 'graded';
+export type AnswerGradingStatus =
+    | 'auto_graded'
+    | 'pending_manual'
+    | 'manually_graded';
+export type AttemptResult = 'passed' | 'failed';
+export type AttemptEventType =
+    | 'started'
+    | 'resumed'
+    | 'tab_hidden'
+    | 'tab_visible'
+    | 'session_replaced'
+    | 'submitted'
+    | 'auto_submitted'
+    | 'expired';
+
+/** Hasil ExamAvailability: apakah kandidat dapat memulai ujian sekarang. */
+export type ExamAvailability =
+    | 'in_progress'
+    | 'available'
+    | 'unavailable'
+    | 'not_open'
+    | 'closed'
+    | 'no_attempts_left'
+    | 'profile_incomplete'
+    | 'prerequisites_incomplete';
+
+/** Status tampilan ujian bagi kandidat. */
+export type ExamProgress =
+    | 'not_started'
+    | 'in_progress'
+    | 'awaiting_grading'
+    | 'completed';
+
+/** AttemptPresenter::summary — nilai kosong jika belum boleh dilihat. */
+export type AttemptSummary = {
+    id: string;
+    attempt_number: number;
+    status: AttemptStatus;
+    grading_status: GradingStatus | null;
+    started_at: string;
+    submitted_at: string | null;
+    score_visible: boolean;
+    score_percent: string | null;
+    earned_points: string | null;
+    max_points: string | null;
+    result: AttemptResult | null;
+    passing_grade: string;
+};
+
+export type CategoryScore = {
+    name: string;
+    earned_points: string;
+    max_points: string;
+};
+
+/** Soal di runner: token acak per attempt, tanpa kunci jawaban. */
+export type RunnerQuestion = {
+    token: string;
+    type: QuestionType;
+    body_html: string;
+    points: string;
+    options: { token: string; body: string }[];
+};
+
+export type RunnerItem = RunnerQuestion & {
+    position: number;
+    /** Sub-soal studi kasus; kosong untuk soal biasa. */
+    children: RunnerQuestion[];
+};
+
+export type RunnerAnswer = {
+    selected: string[];
+    text: string | null;
+    flagged: boolean;
+    revision: number;
+};
+
+export type RunnerState = {
+    attempt: {
+        id: string;
+        status: AttemptStatus;
+        deadline_at: string;
+        server_now: string;
+        navigation: NavigationMode;
+        current_position: number;
+        furthest_position: number;
+    };
+    items: RunnerItem[];
+    answers: Record<string, RunnerAnswer>;
+};
+
+/** AttemptPresenter::review */
+export type ReviewQuestion = {
+    token: string;
+    type: QuestionType;
+    category: string;
+    body_html: string;
+    points: string;
+    awarded_points: string | null;
+    grading_status: AnswerGradingStatus | null;
+    text: string | null;
+    flagged: boolean;
+    options: {
+        token: string;
+        body: string;
+        selected: boolean;
+        is_correct: boolean | null;
+    }[];
+    explanation_html: string | null;
+    /** Hanya untuk penilai. */
+    rubric?: string | null;
+    accepted_answers?: string[];
+    grader_note?: string | null;
+    graded_by?: string | null;
+    graded_at?: string | null;
+};
+
+export type ReviewItem = ReviewQuestion & {
+    position: number;
+    children: ReviewQuestion[];
+};
+
+/** Baris attempt di halaman administrasi. */
+export type AdminAttemptRow = AttemptSummary & {
+    candidate: { id: string; name: string; candidate_number: string };
+    campaign: string;
+    tab_hidden_count: number;
+};
+
+export type Religion =
+    | 'islam'
+    | 'kristen'
+    | 'katolik'
+    | 'hindu'
+    | 'buddha'
+    | 'konghucu'
+    | 'kepercayaan'
+    | 'tidak_disebutkan';
+export type MaritalStatus =
+    | 'belum_menikah'
+    | 'menikah'
+    | 'cerai'
+    | 'tidak_disebutkan';
+export type EducationLevel =
+    | 'sma_smk'
+    | 'd1'
+    | 'd2'
+    | 'd3'
+    | 'd4'
+    | 's1'
+    | 's2'
+    | 's3';
+export type CandidateDocumentType = 'cv' | 'ktp' | 'photo' | 'certificate';
+export type ProfileItem = 'personal' | 'education' | 'cv' | 'id_card' | 'photo';
+
+export type ProfileCompleteness = {
+    complete: boolean;
+    percent: number;
+    items: { key: ProfileItem; done: boolean }[];
+};
+
+export type CandidateEducation = {
+    id: string;
+    level: EducationLevel;
+    institution: string;
+    major: string | null;
+    start_year: number | null;
+    graduation_year: number | null;
+};
+
+export type CandidateExperience = {
+    id: string;
+    company: string;
+    job_title: string;
+    /** Format YYYY-MM. */
+    started_on: string;
+    ended_on: string | null;
+    description: string | null;
+};
+
+export type CandidateDocument = {
+    id: string;
+    type: CandidateDocumentType;
+    label: string | null;
+    name: string;
+    mime: string;
+    size: number;
+    uploaded_at: string | null;
+    /** URL bertanda tangan, berlaku 10 menit. */
+    url: string;
+};
+
+/** PersonalDataPresenter */
+export type PersonalData = {
+    personal: {
+        name: string;
+        email: string;
+        phone: string | null;
+        city: string | null;
+        birth_date: string | null;
+        religion: Religion | null;
+        marital_status: MaritalStatus | null;
+        linkedin_url: string | null;
+        portfolio_url: string | null;
+    };
+    educations: CandidateEducation[];
+    experiences: CandidateExperience[];
+    documents: CandidateDocument[];
+    completeness: ProfileCompleteness;
 };

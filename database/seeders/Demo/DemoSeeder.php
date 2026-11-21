@@ -162,7 +162,7 @@ class DemoSeeder extends Seeder
             RecruitmentStage::Rejected,
         ])->map(fn (RecruitmentStage $stage) => $this->createApplication($campaigns['backend'], $stage, $hrSales));
 
-        // Satu kandidat melamar di dua gelombang: membuktikan lamaran terpisah dari profil.
+        // Satu kandidat melamar di dua rekrutmen: membuktikan lamaran terpisah dari profil.
         $repeatCandidate = $backend->get(1)->candidateProfile;
         $sales->push($this->createApplication($campaigns['sales'], RecruitmentStage::Registered, $hrSales, profile: $repeatCandidate));
 
@@ -193,7 +193,7 @@ class DemoSeeder extends Seeder
     ): RecruitmentApplication {
         $activated = $stage !== RecruitmentStage::Invited;
 
-        // Kandidat lama yang sudah aktif langsung "registered" saat ditambahkan ke gelombang baru.
+        // Kandidat lama yang sudah aktif langsung "registered" saat ditambahkan ke rekrutmen baru.
         $initialStage = $profile?->activated_at !== null ? RecruitmentStage::Registered : RecruitmentStage::Invited;
 
         if ($profile === null) {

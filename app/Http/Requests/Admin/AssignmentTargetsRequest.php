@@ -15,7 +15,7 @@ use Illuminate\Validation\Rule;
 
 /**
  * Target penugasan selalu dibatasi lingkup pengguna: HR hanya dapat menugaskan
- * ke lamaran pada gelombang yang ditugaskan kepadanya. Dipakai untuk program dan ujian.
+ * ke lamaran pada rekrutmen yang ditugaskan kepadanya. Dipakai untuk program dan ujian.
  */
 class AssignmentTargetsRequest extends FormRequest
 {
@@ -94,7 +94,7 @@ class AssignmentTargetsRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'campaign' => 'gelombang',
+            'campaign' => 'rekrutmen',
             'position' => 'posisi',
             'applications' => 'kandidat',
             'applications.*' => 'kandidat',

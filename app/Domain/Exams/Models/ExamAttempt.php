@@ -2,6 +2,7 @@
 
 namespace App\Domain\Exams\Models;
 
+use App\Domain\Candidates\Models\RecruitmentApplication;
 use App\Domain\Exams\Enums\AttemptResult;
 use App\Domain\Exams\Enums\AttemptStatus;
 use App\Domain\Exams\Enums\GradingStatus;
@@ -9,11 +10,14 @@ use App\Domain\Exams\Enums\NavigationMode;
 use App\Domain\Exams\Enums\ResultRelease;
 use App\Domain\Exams\Enums\ScorePolicy;
 use App\Domain\Shared\Concerns\HasPublicId;
+use App\Models\User;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Database\Factories\ExamAttemptFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -39,6 +43,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $ip_address
  * @property string|null $user_agent
  * @property int $furthest_position
+ * @property int $current_position
  * @property string|null $earned_points
  * @property string $max_points
  * @property string|null $score_percent
@@ -53,7 +58,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Hidden(['session_token_hash'])]
 #[Fillable([
     'exam_assignment_id', 'attempt_number', 'status', 'grading_status', 'result', 'started_at', 'deadline_at',
-    'submitted_at', 'finalized_at', 'session_token_hash', 'ip_address', 'user_agent', 'furthest_position',
+    'submitted_at', 'finalized_at', 'session_token_hash', 'ip_address', 'user_agent', 'furthest_position', 'current_position',
     'earned_points', 'max_points', 'score_percent', 'passing_grade', 'navigation', 'score_policy', 'result_release',
 ])]
 class ExamAttempt extends Model
@@ -76,6 +81,7 @@ class ExamAttempt extends Model
             'submitted_at' => 'datetime',
             'finalized_at' => 'datetime',
             'furthest_position' => 'integer',
+            'current_position' => 'integer',
             'earned_points' => 'decimal:2',
             'max_points' => 'decimal:2',
             'score_percent' => 'decimal:2',
@@ -84,6 +90,41 @@ class ExamAttempt extends Model
             'score_policy' => ScorePolicy::class,
             'result_release' => ResultRelease::class,
         ];
+    }
+
+    public function isInProgress(): bool
+    {
+        return $this->status === AttemptStatus::InProgress;
+    }
+
+    /**
+     * Attempt masih berjalan tetapi waktunya sudah habis menurut jam server.
+     */
+    public function isPastDeadline(?CarbonInterface $now = null): bool
+    {
+        return $this->isInProgress() && ($now ?? now())->greaterThanOrEqualTo($this->deadline_at);
+    }
+
+    public function isGraded(): bool
+    {
+        return $this->grading_status === GradingStatus::Graded;
+    }
+
+    /**
+     * Lingkup yang sama dengan lamaran: HR hanya rekrutmen yang ditugaskan,
+     * kandidat hanya miliknya sendiri.
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeVisibleTo(Builder $query, User $user): void
+    {
+        $query->whereIn(
+            $this->qualifyColumn('exam_assignment_id'),
+            ExamAssignment::query()->select('id')->whereIn(
+                'recruitment_application_id',
+                RecruitmentApplication::query()->select('id')->visibleTo($user),
+            ),
+        );
     }
 
     /**

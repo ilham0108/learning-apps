@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Gate;
 use Tests\TestCase;
 
 /**
- * Lingkup data HR per gelombang (docs/tahap-1.md bagian 9). Data di luar
+ * Lingkup data HR per rekrutmen (docs/tahap-1.md bagian 9). Data di luar
  * lingkup harus ditolak sebagai 404, bukan 403.
  */
 class CampaignScopeTest extends TestCase
@@ -85,7 +85,7 @@ class CampaignScopeTest extends TestCase
 
         $this->assertTrue(Gate::forUser(User::factory()->superAdmin()->create())->allows('manageTeam', $campaign));
 
-        // HR yang ditugaskan tahu gelombangnya ada, jadi ditolak dengan 403 biasa.
+        // HR yang ditugaskan tahu rekrutmennya ada, jadi ditolak dengan 403 biasa.
         $denied = Gate::forUser($this->hr)->inspect('manageTeam', $campaign);
         $this->assertTrue($denied->denied());
         $this->assertNull($denied->status());

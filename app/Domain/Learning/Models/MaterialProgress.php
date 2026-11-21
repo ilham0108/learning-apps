@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Progres kandidat per materi. Disimpan per kandidat, bukan per lamaran,
- * agar materi yang sama tidak perlu dipelajari ulang di gelombang lain.
+ * agar materi yang sama tidak perlu dipelajari ulang di rekrutmen lain.
  *
  * @property int $id
  * @property int $candidate_profile_id

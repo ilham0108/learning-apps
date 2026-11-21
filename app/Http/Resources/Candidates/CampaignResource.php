@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * Detail gelombang untuk halaman detail dan form ubah.
+ * Detail rekrutmen untuk halaman detail dan form ubah.
  *
  * @mixin RecruitmentCampaign
  */

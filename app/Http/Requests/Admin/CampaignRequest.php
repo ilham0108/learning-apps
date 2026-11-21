@@ -47,7 +47,7 @@ class CampaignRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'name' => 'nama gelombang',
+            'name' => 'nama rekrutmen',
             'position' => 'posisi',
             'starts_on' => 'tanggal mulai',
             'ends_on' => 'tanggal selesai',

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use Closure;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -13,13 +14,15 @@ class Paginated
 {
     /**
      * @param  LengthAwarePaginator<int, mixed>  $paginator
-     * @param  class-string<JsonResource>  $resource
+     * @param  class-string<JsonResource>|Closure(mixed): array<string, mixed>  $resource  Resource atau fungsi pembentuk baris.
      * @return array{data: array<int, mixed>, meta: array{current_page: int, last_page: int, per_page: int, total: int, from: int|null, to: int|null}}
      */
-    public static function make(LengthAwarePaginator $paginator, string $resource): array
+    public static function make(LengthAwarePaginator $paginator, string|Closure $resource): array
     {
         return [
-            'data' => $resource::collection($paginator->getCollection())->resolve(),
+            'data' => $resource instanceof Closure
+                ? $paginator->getCollection()->map($resource)->values()->all()
+                : $resource::collection($paginator->getCollection())->resolve(),
             'meta' => [
                 'current_page' => $paginator->currentPage(),
                 'last_page' => $paginator->lastPage(),

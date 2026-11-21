@@ -9,7 +9,7 @@ use Illuminate\Auth\Access\Response;
 
 /**
  * Ujian bersifat bersama untuk semua HR (rules Bagian 4); penugasan dibatasi
- * lingkup gelombang lewat validasi target. Kandidat mengakses ujian lewat
+ * lingkup rekrutmen lewat validasi target. Kandidat mengakses ujian lewat
  * penugasan miliknya (Tahap 7), bukan lewat halaman administrasi.
  */
 class ExamPolicy
@@ -46,6 +46,11 @@ class ExamPolicy
         return $exam->isLocked()
             ? Response::deny(__('Soal dan bobot ujian yang sudah dikerjakan tidak dapat diubah.'))
             : Response::allow();
+    }
+
+    public function releaseResults(User $user, Exam $exam): Response
+    {
+        return $this->view($user, $exam);
     }
 
     public function assign(User $user, Exam $exam): Response

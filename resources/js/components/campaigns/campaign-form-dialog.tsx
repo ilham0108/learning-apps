@@ -19,7 +19,7 @@ import type { CampaignDetail, CampaignStatus, PositionOption } from '@/types';
 const statuses: CampaignStatus[] = ['draft', 'open', 'closed'];
 
 /**
- * Modal buat/ubah gelombang. Setelah dibuat, server mengarahkan ke halaman detail gelombang.
+ * Modal buat/ubah rekrutmen. Setelah dibuat, server mengarahkan ke halaman detail rekrutmen.
  */
 export function CampaignFormDialog({
     campaign,

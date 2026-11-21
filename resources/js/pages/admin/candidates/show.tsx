@@ -8,6 +8,7 @@ import {
 import { AccountActions } from '@/components/candidates/account-actions';
 import { EvaluationSection } from '@/components/candidates/evaluation-section';
 import { NotesSection } from '@/components/candidates/notes-section';
+import { PersonalDataCard } from '@/components/candidates/personal-data-card';
 import { ProgramsSection } from '@/components/candidates/programs-section';
 import type {
     CandidateProgramAssignment,
@@ -27,13 +28,14 @@ import { t } from '@/lib/i18n';
 import { CandidateIcon, PositionIcon } from '@/lib/icons';
 import campaigns from '@/routes/admin/campaigns';
 import candidates from '@/routes/admin/candidates';
-import type { CandidateDetail } from '@/types';
+import type { CandidateDetail, PersonalData } from '@/types';
 
 type Props = {
     candidate: CandidateDetail;
     canUpdate: boolean;
     programAssignments: Record<string, CandidateProgramAssignment[]>;
     programOptions: ProgramOption[];
+    personalData: PersonalData;
 };
 
 export default function CandidateShow({
@@ -41,6 +43,7 @@ export default function CandidateShow({
     canUpdate,
     programAssignments,
     programOptions,
+    personalData,
 }: Props) {
     const { displayTimezone } = usePage().props;
     const notYet = t('admin.candidates.detail.notYet');
@@ -69,95 +72,105 @@ export default function CandidateShow({
                 />
 
                 <div className="grid gap-6 xl:grid-cols-3">
-                    <Card className="h-fit">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <CandidateIcon
-                                    className="size-5"
-                                    aria-hidden="true"
-                                />
-                                {t('admin.candidates.detail.profile')}
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <dl className="grid gap-3 text-sm">
-                                <Detail
-                                    label={t('common.email')}
-                                    value={candidate.email}
-                                />
-                                <Detail
-                                    label={t('admin.candidates.detail.phone')}
-                                    value={
-                                        candidate.phone ??
-                                        t('common.notAvailable')
-                                    }
-                                />
-                                <Detail
-                                    label={t(
-                                        'admin.candidates.detail.lastEducation',
-                                    )}
-                                    value={
-                                        candidate.last_education ??
-                                        t('common.notAvailable')
-                                    }
-                                />
-                                <Detail
-                                    label={t(
-                                        'admin.candidates.detail.registeredOn',
-                                    )}
-                                    value={formatDate(
-                                        candidate.registered_on,
-                                        displayTimezone,
-                                    )}
-                                />
-                                <Detail
-                                    label={t(
-                                        'admin.candidates.detail.activatedAt',
-                                    )}
-                                    value={
-                                        candidate.activated_at
-                                            ? formatDateTime(
-                                                  candidate.activated_at,
-                                                  displayTimezone,
-                                              )
-                                            : notYet
-                                    }
-                                />
-                                <Detail
-                                    label={t('admin.candidates.detail.consent')}
-                                    value={
-                                        candidate.consent_given_at
-                                            ? t(
-                                                  'admin.candidates.detail.consentValue',
-                                                  {
-                                                      date: formatDateTime(
-                                                          candidate.consent_given_at,
-                                                          displayTimezone,
-                                                      ),
-                                                      version:
-                                                          candidate.consent_policy_version ??
-                                                          '—',
-                                                  },
-                                              )
-                                            : notYet
-                                    }
-                                />
-                                <Detail
-                                    label={t(
-                                        'admin.candidates.detail.lastLogin',
-                                    )}
-                                    value={
-                                        candidate.last_login_at
-                                            ? formatDateTime(
-                                                  candidate.last_login_at,
-                                                  displayTimezone,
-                                              )
-                                            : t('admin.candidates.detail.never')
-                                    }
-                                />
-                            </dl>
-                        </CardContent>
-                    </Card>
+                    <div className="space-y-6">
+                        <Card className="h-fit">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <CandidateIcon
+                                        className="size-5"
+                                        aria-hidden="true"
+                                    />
+                                    {t('admin.candidates.detail.profile')}
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <dl className="grid gap-3 text-sm">
+                                    <Detail
+                                        label={t('common.email')}
+                                        value={candidate.email}
+                                    />
+                                    <Detail
+                                        label={t(
+                                            'admin.candidates.detail.phone',
+                                        )}
+                                        value={
+                                            candidate.phone ??
+                                            t('common.notAvailable')
+                                        }
+                                    />
+                                    <Detail
+                                        label={t(
+                                            'admin.candidates.detail.lastEducation',
+                                        )}
+                                        value={
+                                            candidate.last_education ??
+                                            t('common.notAvailable')
+                                        }
+                                    />
+                                    <Detail
+                                        label={t(
+                                            'admin.candidates.detail.registeredOn',
+                                        )}
+                                        value={formatDate(
+                                            candidate.registered_on,
+                                            displayTimezone,
+                                        )}
+                                    />
+                                    <Detail
+                                        label={t(
+                                            'admin.candidates.detail.activatedAt',
+                                        )}
+                                        value={
+                                            candidate.activated_at
+                                                ? formatDateTime(
+                                                      candidate.activated_at,
+                                                      displayTimezone,
+                                                  )
+                                                : notYet
+                                        }
+                                    />
+                                    <Detail
+                                        label={t(
+                                            'admin.candidates.detail.consent',
+                                        )}
+                                        value={
+                                            candidate.consent_given_at
+                                                ? t(
+                                                      'admin.candidates.detail.consentValue',
+                                                      {
+                                                          date: formatDateTime(
+                                                              candidate.consent_given_at,
+                                                              displayTimezone,
+                                                          ),
+                                                          version:
+                                                              candidate.consent_policy_version ??
+                                                              '—',
+                                                      },
+                                                  )
+                                                : notYet
+                                        }
+                                    />
+                                    <Detail
+                                        label={t(
+                                            'admin.candidates.detail.lastLogin',
+                                        )}
+                                        value={
+                                            candidate.last_login_at
+                                                ? formatDateTime(
+                                                      candidate.last_login_at,
+                                                      displayTimezone,
+                                                  )
+                                                : t(
+                                                      'admin.candidates.detail.never',
+                                                  )
+                                        }
+                                    />
+                                </dl>
+                            </CardContent>
+                        </Card>
+
+                        <PersonalDataCard data={personalData} />
+                    </div>
 
                     <div className="space-y-6 xl:col-span-2">
                         <h2 className="text-lg font-semibold">

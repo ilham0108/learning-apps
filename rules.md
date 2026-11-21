@@ -4,15 +4,15 @@
 
 Salin semua bagian di bawah catatan ini ke AI. Beberapa keputusan bisnis belum ditentukan, jadi diisi dengan default yang sederhana dan aman. Periksa dan ubah jika perlu sebelum dipakai:
 
-| Keputusan                     | Default yang dipakai                                                                      | Lokasi    |
-| ----------------------------- | ----------------------------------------------------------------------------------------- | --------- |
-| Lingkup akses HR              | HR hanya melihat gelombang rekrutmen yang ditugaskan kepadanya; Super Admin melihat semua | Bagian 4  |
-| Nilai dari percobaan berulang | Dapat diatur per ujian; default nilai tertinggi                                           | Bagian 8  |
-| Status kandidat               | Enum tetap, bukan dapat ditambah HR                                                       | Bagian 5  |
-| Retensi data                  | 12 bulan setelah gelombang ditutup, lalu dianonimkan                                      | Bagian 13 |
-| Video materi                  | Embed tautan (YouTube/Vimeo) dan unggah file maksimal 200 MB                              | Bagian 6  |
-| Bahasa antarmuka              | Bahasa Indonesia, teks disiapkan agar mudah diterjemahkan                                 | Bagian 12 |
-| Zona waktu tampilan           | Asia/Jakarta; disimpan dalam UTC                                                          | Bagian 3  |
+| Keputusan                     | Default yang dipakai                                                            | Lokasi    |
+| ----------------------------- | ------------------------------------------------------------------------------- | --------- |
+| Lingkup akses HR              | HR hanya melihat rekrutmen yang ditugaskan kepadanya; Super Admin melihat semua | Bagian 4  |
+| Nilai dari percobaan berulang | Dapat diatur per ujian; default nilai tertinggi                                 | Bagian 8  |
+| Status kandidat               | Enum tetap, bukan dapat ditambah HR                                             | Bagian 5  |
+| Retensi data                  | 12 bulan setelah rekrutmen ditutup, lalu dianonimkan                            | Bagian 13 |
+| Video materi                  | Embed tautan (YouTube/Vimeo) dan unggah file maksimal 200 MB                    | Bagian 6  |
+| Bahasa antarmuka              | Bahasa Indonesia, teks disiapkan agar mudah diterjemahkan                       | Bagian 12 |
+| Zona waktu tampilan           | Asia/Jakarta; disimpan dalam UTC                                                | Bagian 3  |
 
 ---
 
@@ -28,7 +28,7 @@ Bangun sistem yang benar-benar berfungsi: backend, database, autentikasi, otoris
 
 Aplikasi digunakan tim HR untuk mengelola pembelajaran dan pengujian calon karyawan. Sistem harus dapat:
 
-- Mengelola data kandidat dan gelombang rekrutmen.
+- Mengelola data kandidat dan rekrutmen.
 - Mengelola program pembelajaran dan materi.
 - Mengelola bank soal dan paket ujian.
 - Mengatur jadwal dan batas waktu ujian.
@@ -38,7 +38,7 @@ Aplikasi digunakan tim HR untuk mengelola pembelajaran dan pengujian calon karya
 - Memantau progres pembelajaran kandidat.
 - Membantu HR mengevaluasi kandidat berdasarkan beberapa kriteria, bukan satu nilai saja.
 - Menghasilkan laporan evaluasi kandidat.
-  Sistem harus dapat dipakai berulang untuk berbagai posisi, departemen, dan gelombang rekrutmen.
+  Sistem harus dapat dipakai berulang untuk berbagai posisi, departemen, dan rekrutmen.
 
 ## 3. Teknologi dan Arsitektur
 
@@ -78,25 +78,25 @@ Aplikasi digunakan tim HR untuk mengelola pembelajaran dan pengujian calon karya
 
 Sediakan tiga role. Semua otorisasi diterapkan di server melalui Policy; menyembunyikan menu di frontend bukan pengamanan.
 
-**Super Admin**: mengelola akun administrator dan HR, konfigurasi sistem, seluruh data, seluruh program dan ujian, seluruh laporan, serta penugasan HR ke gelombang rekrutmen.
+**Super Admin**: mengelola akun administrator dan HR, konfigurasi sistem, seluruh data, seluruh program dan ujian, seluruh laporan, serta penugasan HR ke rekrutmen.
 
-**HR / Recruitment Administrator**: mengelola kandidat, gelombang, program, materi, kategori soal, bank soal, ujian, passing grade, jadwal, undangan, penilaian manual, status seleksi, dan ekspor laporan.
+**HR / Recruitment Administrator**: mengelola kandidat, rekrutmen, program, materi, kategori soal, bank soal, ujian, passing grade, jadwal, undangan, penilaian manual, status seleksi, dan ekspor laporan.
 
 **Candidate**: login, melengkapi profil, melihat instruksi, mengakses materi yang ditugaskan, mengerjakan ujian yang tersedia, melihat hasil yang sudah dipublikasikan, dan melihat riwayat miliknya sendiri.
 
-**Lingkup data HR (default)**: HR hanya dapat mengakses kandidat, attempt, hasil, dan laporan dari gelombang rekrutmen yang ditugaskan kepadanya (relasi many-to-many `campaign_user`). Bank soal, program, dan ujian bersifat bersama untuk semua HR. Terapkan lingkup ini di query (scope) dan di Policy, termasuk pada ekspor dan dashboard.
+**Lingkup data HR (default)**: HR hanya dapat mengakses kandidat, attempt, hasil, dan laporan dari rekrutmen yang ditugaskan kepadanya (relasi many-to-many `campaign_user`). Bank soal, program, dan ujian bersifat bersama untuk semua HR. Terapkan lingkup ini di query (scope) dan di Policy, termasuk pada ekspor dan dashboard.
 
 Kandidat tidak boleh mengakses data kandidat lain, bank soal, kunci jawaban yang belum dipublikasikan, catatan internal HR, atau halaman administrasi.
 
 Buat matriks hak akses (role × aksi) pada Tahap 1, lalu tulis tes otorisasi berdasarkan matriks tersebut.
 
-## 5. Modul Kandidat dan Gelombang Rekrutmen
+## 5. Modul Kandidat dan Rekrutmen
 
-**Gelombang rekrutmen** memiliki nama, posisi, departemen, periode, status (draft, open, closed), dan HR yang ditugaskan.
+**Rekrutmen** memiliki nama, posisi, departemen, periode, status (draft, open, closed), dan HR yang ditugaskan.
 
 **Fitur kandidat**: tambah, edit, detail, nonaktifkan, pencarian, filter, dan pagination di server. Impor CSV dan undangan email masuk fase 2 (lihat Bagian 15).
 
-**Data kandidat**: nama lengkap, email, nomor telepon, nomor kandidat (dibuat otomatis, unik), pendidikan terakhir (opsional), dan tanggal pendaftaran. Posisi, departemen, dan gelombang melekat pada **lamaran** (`recruitment_applications`), bukan pada profil, agar satu kandidat bisa melamar di gelombang berbeda.
+**Data kandidat**: nama lengkap, email, nomor telepon, nomor kandidat (dibuat otomatis, unik), pendidikan terakhir (opsional), dan tanggal pendaftaran. Posisi, departemen, dan rekrutmen melekat pada **lamaran** (`recruitment_applications`), bukan pada profil, agar satu kandidat bisa melamar di rekrutmen berbeda.
 
 **Catatan internal HR** disimpan terpisah, hanya terlihat oleh HR yang berwenang, dan tidak pernah dikirim ke halaman kandidat.
 
@@ -130,7 +130,7 @@ Jangan menyimpan data sensitif yang tidak dibutuhkan untuk seleksi (misalnya NIK
 
 Membuka halaman tidak dianggap selesai. Catat waktu pertama dibuka dan waktu selesai.
 
-**Penugasan program** dapat ke individu, gelombang, posisi, atau kelompok kandidat terpilih. Simpan hasil penugasan sebagai baris per kandidat agar progres dan otorisasi mudah dihitung.
+**Penugasan program** dapat ke individu, rekrutmen, posisi, atau kelompok kandidat terpilih. Simpan hasil penugasan sebagai baris per kandidat agar progres dan otorisasi mudah dihitung.
 
 **Akses file**: semua file disimpan di disk privat dan dilayani melalui controller yang memeriksa Policy, atau melalui URL bertanda tangan yang berlaku singkat (misalnya 10 menit). Validasi tipe MIME sebenarnya, ekstensi, dan ukuran saat unggah.
 
@@ -163,7 +163,7 @@ Kunci jawaban dan penjelasan tidak pernah dikirim ke browser kandidat sebelum ke
 
 Ujian yang sudah memiliki attempt tidak boleh diubah soal atau bobotnya. Sediakan fitur duplikasi untuk membuat versi baru.
 
-**Penugasan ujian** ke individu, gelombang, posisi, atau kelompok terpilih, disimpan sebagai baris per kandidat. Penugasan individu dapat memiliki jadwal khusus (misalnya perpanjangan).
+**Penugasan ujian** ke individu, rekrutmen, posisi, atau kelompok terpilih, disimpan sebagai baris per kandidat. Penugasan individu dapat memiliki jadwal khusus (misalnya perpanjangan).
 
 ## 9. Mesin Pengerjaan Ujian
 
@@ -215,13 +215,13 @@ Nilai akhir = (total poin diperoleh ÷ total poin maksimal) × 100, dengan bobot
 
 ## 11. Dashboard HR dan Kandidat
 
-**Dashboard HR** (hanya data dalam lingkup HR tersebut): total kandidat, kandidat baru, sedang belajar, sedang ujian, lulus, gagal, menunggu penilaian manual, rata-rata nilai, persentase penyelesaian materi, aktivitas terbaru, dan ujian yang akan ditutup dalam 7 hari. Filter: periode, posisi, departemen, gelombang, program, dan tahap rekrutmen. Semua angka dari query database aktual; gunakan agregasi di database, bukan perulangan di PHP.
+**Dashboard HR** (hanya data dalam lingkup HR tersebut): total kandidat, kandidat baru, sedang belajar, sedang ujian, lulus, gagal, menunggu penilaian manual, rata-rata nilai, persentase penyelesaian materi, aktivitas terbaru, dan ujian yang akan ditutup dalam 7 hari. Filter: periode, posisi, departemen, rekrutmen, program, dan tahap rekrutmen. Semua angka dari query database aktual; gunakan agregasi di database, bukan perulangan di PHP.
 
 **Dashboard kandidat**: profil, posisi dan tahap rekrutmen, program yang ditugaskan dengan persentase progres, materi yang harus diselesaikan, ujian tersedia beserta jadwal dan sisa percobaan, riwayat ujian, nilai yang sudah dipublikasikan, dan status evaluasi. Bedakan secara visual: belum dimulai, berlangsung, selesai, menunggu evaluasi.
 
 ## 12. Laporan dan UI/UX
 
-**Laporan**: kandidat dan hasil ujian, rekap nilai, nilai per kategori, progres belajar, tingkat kelulusan, kandidat yang belum menyelesaikan materi, belum mengikuti ujian, dan menunggu penilaian manual. Ekspor CSV di MVP; ekspor Excel dan perbandingan antar-gelombang di fase 2. Ekspor besar diproses lewat queue dan file hasil hanya dapat diunduh oleh peminta. Ekspor dicatat di audit log.
+**Laporan**: kandidat dan hasil ujian, rekap nilai, nilai per kategori, progres belajar, tingkat kelulusan, kandidat yang belum menyelesaikan materi, belum mengikuti ujian, dan menunggu penilaian manual. Ekspor CSV di MVP; ekspor Excel dan perbandingan antar-rekrutmen di fase 2. Ekspor besar diproses lewat queue dan file hasil hanya dapat diunduh oleh peminta. Ekspor dicatat di audit log.
 
 **Gaya visual**: modern, minimalis, profesional. Dominan putih, biru profesional sebagai warna utama, netral untuk latar dan komponen, hijau untuk berhasil, merah untuk gagal dan tindakan berisiko. Sidebar untuk HR, navigasi sederhana untuk kandidat.
 
@@ -259,7 +259,7 @@ Pisahkan seeder: **produksi** (role dan Super Admin awal dari environment variab
 **Keamanan**:
 
 - Autentikasi aman, rate limiting login dan endpoint sensitif (autosave, submit, ekspor).
-- Otorisasi berdasarkan role, kepemilikan data, dan lingkup gelombang.
+- Otorisasi berdasarkan role, kepemilikan data, dan lingkup rekrutmen.
 - Validasi input server, proteksi CSRF, proteksi mass assignment (`$fillable` eksplisit).
 - Sanitasi HTML pada materi artikel dan soal untuk mencegah XSS.
 - Validasi dan pembatasan akses file.
@@ -283,7 +283,7 @@ Pisahkan seeder: **produksi** (role dan Super Admin awal dari environment variab
 
 - Persetujuan pemrosesan data saat kandidat pertama kali login, disimpan beserta waktu dan versi kebijakan.
 - Kumpulkan hanya data yang dibutuhkan untuk seleksi.
-- Retensi default: 12 bulan setelah gelombang ditutup, lalu data pribadi dianonimkan oleh scheduled job. Nilai agregat tetap untuk laporan.
+- Retensi default: 12 bulan setelah rekrutmen ditutup, lalu data pribadi dianonimkan oleh scheduled job. Nilai agregat tetap untuk laporan.
 - Kandidat dapat mengajukan penghapusan data; Super Admin memprosesnya.
 - Catatan evaluasi internal hanya untuk HR yang berwenang.
 
@@ -294,7 +294,7 @@ Tulis automated test untuk kasus normal, input tidak valid, akses tanpa izin, da
 **Backend (Pest/PHPUnit)**:
 
 - Login, logout, dan pembatasan percobaan login.
-- Hak akses tiap role sesuai matriks, termasuk lingkup gelombang HR.
+- Hak akses tiap role sesuai matriks, termasuk lingkup rekrutmen HR.
 - Isolasi data antarkandidat.
 - Program, penugasan materi, dan pelacakan progres.
 - Pembuatan ujian dan larangan mengubah ujian yang sudah memiliki attempt.
@@ -318,7 +318,7 @@ Tulis automated test untuk kasus normal, input tidak valid, akses tanpa izin, da
 
 **Masuk MVP**: semua bagian di atas, kecuali daftar fase 2.
 
-**Fase 2**: impor kandidat dari CSV, undangan dan notifikasi email, ekspor Excel, perbandingan antar-gelombang, aturan durasi tonton video, nilai parsial lanjutan, dan status rekrutmen yang dapat dikonfigurasi HR.
+**Fase 2**: impor kandidat dari CSV, undangan dan notifikasi email, ekspor Excel, perbandingan antar-rekrutmen, aturan durasi tonton video, nilai parsial lanjutan, dan status rekrutmen yang dapat dikonfigurasi HR.
 
 Rancang database dan kode MVP agar fitur fase 2 dapat ditambahkan tanpa migrasi besar.
 
@@ -333,7 +333,7 @@ Jangan menyimpan kredensial, `APP_KEY`, atau rahasia lain di repository.
 1. Analisis kebutuhan dan rancangan arsitektur.
 2. Rancangan database dan migration.
 3. Autentikasi, role, otorisasi, dan layout React/Inertia.
-4. Modul kandidat dan gelombang rekrutmen.
+4. Modul kandidat dan rekrutmen.
 5. Modul program pembelajaran dan materi.
 6. Modul bank soal dan ujian.
 7. Mesin pengerjaan ujian dan penilaian.

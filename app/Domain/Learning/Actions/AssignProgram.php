@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Menugaskan program ke individu, kelompok terpilih, gelombang, atau posisi.
+ * Menugaskan program ke individu, kelompok terpilih, rekrutmen, atau posisi.
  * Penugasan dimaterialisasi menjadi satu baris per lamaran saat ini juga
  * (keputusan T12); lamaran yang sudah ditugaskan dilewati.
  */

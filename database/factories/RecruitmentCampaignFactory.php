@@ -23,7 +23,7 @@ class RecruitmentCampaignFactory extends Factory
         $startsOn = now()->subDays(fake()->numberBetween(0, 30))->startOfDay();
 
         return [
-            'name' => 'Gelombang '.fake()->unique()->numberBetween(1, 9999),
+            'name' => 'Rekrutmen '.fake()->unique()->numberBetween(1, 9999),
             'position_id' => Position::factory(),
             'starts_on' => $startsOn,
             'ends_on' => $startsOn->addDays(60),
@@ -48,7 +48,7 @@ class RecruitmentCampaignFactory extends Factory
     }
 
     /**
-     * Tugaskan HR ke gelombang setelah dibuat.
+     * Tugaskan HR ke rekrutmen setelah dibuat.
      */
     public function assignedTo(User ...$hrUsers): static
     {

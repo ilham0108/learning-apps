@@ -21,7 +21,7 @@ type Props =
     | {
           mode: 'create';
           campaignOptions: CampaignOption[];
-          /** Gelombang yang sudah dipilih, misalnya saat dibuka dari halaman gelombang. */
+          /** Rekrutmen yang sudah dipilih, misalnya saat dibuka dari halaman rekrutmen. */
           selectedCampaign?: string;
           onClose: () => void;
       }
@@ -32,7 +32,7 @@ type Props =
       };
 
 /**
- * Modal tambah kandidat ke gelombang atau ubah data kandidat. Setelah ditambahkan,
+ * Modal tambah kandidat ke rekrutmen atau ubah data kandidat. Setelah ditambahkan,
  * server mengarahkan ke halaman detail kandidat.
  */
 export function CandidateFormDialog(props: Props) {

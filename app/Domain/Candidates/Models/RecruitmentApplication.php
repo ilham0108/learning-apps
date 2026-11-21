@@ -26,13 +26,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $candidate_profile_id
  * @property int $recruitment_campaign_id
  * @property RecruitmentStage $stage
+ * @property int|null $campaign_stage_id
  * @property CarbonImmutable $stage_changed_at
  * @property CarbonImmutable $applied_at
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  */
 #[UseFactory(RecruitmentApplicationFactory::class)]
-#[Fillable(['candidate_profile_id', 'recruitment_campaign_id', 'stage', 'stage_changed_at', 'applied_at'])]
+#[Fillable(['candidate_profile_id', 'recruitment_campaign_id', 'stage', 'campaign_stage_id', 'stage_changed_at', 'applied_at'])]
 class RecruitmentApplication extends Model
 {
     /** @use HasFactory<RecruitmentApplicationFactory> */
@@ -58,6 +59,11 @@ class RecruitmentApplication extends Model
      */
     public function scopeVisibleTo(Builder $query, User $user): void
     {
+        // Super Admin dan jabatan dengan hak "lihat semua rekrutmen" tidak dibatasi.
+        if ($user->seesAllCampaigns()) {
+            return;
+        }
+
         match ($user->role) {
             Role::SuperAdmin => null,
             Role::Hr => $query->whereIn($this->qualifyColumn('recruitment_campaign_id'), RecruitmentCampaign::assignedCampaignIds($user)),
@@ -82,6 +88,27 @@ class RecruitmentApplication extends Model
     public function campaign(): BelongsTo
     {
         return $this->belongsTo(RecruitmentCampaign::class, 'recruitment_campaign_id');
+    }
+
+    /**
+     * Tahap proses saat ini (kategori `in_process`), atau tahap terakhir
+     * sebelum hasil akhir.
+     *
+     * @return BelongsTo<CampaignStage, $this>
+     */
+    public function campaignStage(): BelongsTo
+    {
+        return $this->belongsTo(CampaignStage::class);
+    }
+
+    /**
+     * Nama tahap untuk ditampilkan: nama tahap proses atau label kategori.
+     */
+    public function stageLabel(): string
+    {
+        return $this->stage === RecruitmentStage::InProcess && $this->campaignStage !== null
+            ? $this->campaignStage->name
+            : $this->stage->label();
     }
 
     /**

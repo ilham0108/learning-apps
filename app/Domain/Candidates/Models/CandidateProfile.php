@@ -74,6 +74,11 @@ class CandidateProfile extends Model
      */
     public function scopeVisibleTo(Builder $query, User $user): void
     {
+        // Super Admin dan jabatan dengan hak "lihat semua rekrutmen" tidak dibatasi.
+        if ($user->seesAllCampaigns()) {
+            return;
+        }
+
         match ($user->role) {
             Role::SuperAdmin => null,
             Role::Hr => $query->whereIn(

@@ -32,6 +32,9 @@ export const id = {
         edit: 'Ubah',
         view: 'Lihat',
         delete: 'Hapus',
+        selectAll: 'Pilih semua di halaman ini',
+        clearSelection: 'Batalkan pilihan',
+        selectedCount: ':count dipilih',
         actions: 'Aksi',
         search: 'Cari',
         searchPlaceholder: 'Cari…',
@@ -76,6 +79,9 @@ export const id = {
         grading: 'Penilaian',
         reports: 'Laporan',
         auditLog: 'Audit log',
+        staff: 'Akun staf',
+        jobRoles: 'Jabatan & hak akses',
+        pipeline: 'Alur tahap',
         settings: 'Pengaturan',
         logout: 'Keluar',
         toggleSidebar: 'Buka/tutup sidebar',
@@ -265,8 +271,7 @@ export const id = {
         recruitmentStage: {
             invited: 'Diundang',
             registered: 'Terdaftar',
-            under_review: 'Ditinjau',
-            shortlisted: 'Lolos seleksi awal',
+            in_process: 'Dalam proses',
             rejected: 'Tidak lolos',
             hired: 'Diterima',
             withdrawn: 'Mengundurkan diri',
@@ -475,6 +480,25 @@ export const id = {
             deleteTitle: 'Hapus soal ini?',
             deleteDescription:
                 'Soal yang pernah dipakai ujian tidak dapat dihapus dan sebaiknya diarsipkan.',
+            select: 'Pilih soal: :text',
+            bulkDelete: {
+                action: 'Hapus terpilih',
+                title: 'Hapus :count soal?',
+                description:
+                    'Soal yang dihapus tidak dapat dikembalikan. Soal yang pernah dipakai ujian akan dilewati dan sebaiknya diarsipkan.',
+                confirm: 'Hapus :count soal',
+            },
+            import: {
+                action: 'Impor Excel',
+                title: 'Impor soal dari Excel',
+                description:
+                    'Unduh template, isi soal di sheet Soal, lalu unggah kembali. Jika ada baris yang salah, tidak ada soal yang disimpan.',
+                template: 'Unduh template',
+                file: 'File Excel',
+                fileHelp: 'Format .xlsx, maksimal 5 MB dan 1000 baris.',
+                rowErrors: 'Impor dibatalkan: :count baris perlu diperbaiki.',
+                submit: 'Impor soal',
+            },
         },
         exams: {
             title: 'Ujian',
@@ -593,6 +617,147 @@ export const id = {
                 revokeTitle: 'Cabut penugasan ujian?',
                 revokeDescription:
                     'Penugasan yang sudah dikerjakan tidak dapat dicabut.',
+            },
+        },
+        pipeline: {
+            title: 'Alur tahap default',
+            description:
+                'Tahap proses yang disalin ke setiap rekrutmen baru. Mengubah alur default tidak memengaruhi rekrutmen yang sudah ada.',
+            campaignTitle: 'Alur tahap',
+            campaignDescription:
+                'Kandidat dipindahkan berurutan melalui tahap ini, setelah Terdaftar dan sebelum Diterima.',
+            fixedStart: 'Diundang → Terdaftar',
+            fixedEnd: 'Diterima',
+            add: 'Tambah tahap',
+            newLabel: 'Nama tahap baru',
+            newPlaceholder: 'Contoh: Wawancara user',
+            rename: 'Ganti nama :name',
+            renameLabel: 'Nama tahap',
+            moveUp: 'Naikkan :name',
+            moveDown: 'Turunkan :name',
+            delete: 'Hapus :name',
+            deleteTitle: 'Hapus tahap ":name"?',
+            deleteDescription:
+                'Tahap yang sudah pernah dipakai kandidat tidak dapat dihapus.',
+            inUse: 'Sudah dipakai kandidat',
+            currentCount: ':count kandidat',
+            empty: 'Belum ada tahap proses. Kandidat yang terdaftar langsung bisa diputuskan diterima atau tidak lolos.',
+            max: 'Batas :count tahap tercapai.',
+        },
+        staff: {
+            title: 'Akun staf',
+            description:
+                'Akun karyawan yang memakai aplikasi ini. Hak setiap akun mengikuti jabatannya.',
+            create: 'Tambah staf',
+            createTitle: 'Tambah akun staf',
+            createDescription:
+                'Sistem membuat tautan aktivasi untuk staf ini. Staf membuat password sendiri; Anda tidak pernah mengetahuinya.',
+            editTitle: 'Ubah akun :name',
+            empty: 'Belum ada akun staf',
+            fields: {
+                name: 'Nama lengkap',
+                email: 'Email kantor',
+                jobRole: 'Jabatan',
+                active: 'Akun aktif',
+                reason: 'Alasan perubahan',
+            },
+            columns: {
+                staff: 'Staf',
+                jobRole: 'Jabatan',
+                status: 'Status',
+                lastLogin: 'Terakhir masuk',
+            },
+            noJobRole: 'Belum ada jabatan',
+            activationLink: 'Buat tautan aktivasi',
+            activationDescription:
+                'Kirim tautan ini kepada staf secara pribadi. Tautan berlaku 72 jam, hanya dapat dipakai sekali, dan tidak akan ditampilkan lagi.',
+            never: 'Belum pernah',
+            selfNotice:
+                'Akun Anda sendiri tidak dapat diubah dari halaman ini.',
+        },
+        jobRoles: {
+            title: 'Jabatan & hak akses',
+            description:
+                'Hak setiap jabatan menentukan menu dan tindakan yang tersedia bagi staf. Super Admin selalu memiliki semua hak.',
+            create: 'Tambah jabatan',
+            createTitle: 'Tambah jabatan',
+            editTitle: 'Atur hak :name',
+            system: 'Bawaan',
+            usersCount: ':count staf',
+            permissionsCount: ':count hak',
+            fields: {
+                name: 'Nama jabatan',
+                description: 'Keterangan',
+            },
+            ownRoleNotice:
+                'Ini jabatan Anda sendiri. Hak jabatan Anda hanya dapat diubah oleh Super Admin.',
+            notGrantable:
+                'Anda tidak memiliki hak ini, sehingga tidak dapat memberikannya.',
+            delete: 'Hapus jabatan',
+            deleteTitle: 'Hapus jabatan :name?',
+            deleteDescription:
+                'Jabatan hanya bisa dihapus jika tidak dipakai staf mana pun.',
+            groups: {
+                recruitment: 'Rekrutmen',
+                candidates: 'Kandidat dan lamaran',
+                learning: 'Pembelajaran',
+                exams: 'Ujian dan penilaian',
+                reports: 'Laporan',
+                system: 'Sistem',
+            },
+            permissions: {
+                campaigns: {
+                    view_all:
+                        'Melihat semua rekrutmen (bukan hanya yang ditugaskan)',
+                    manage: 'Membuat dan mengubah rekrutmen, posisi, departemen',
+                    assign_team: 'Menugaskan staf ke rekrutmen',
+                },
+                pipeline: {
+                    manage_default: 'Mengatur alur tahap rekrutmen default',
+                    manage_campaign: 'Mengatur alur tahap per rekrutmen',
+                },
+                candidates: {
+                    manage: 'Menambah dan mengubah data kandidat',
+                    view_sensitive:
+                        'Melihat data sensitif (agama, status pernikahan, foto KTP)',
+                },
+                applications: {
+                    move_stage: 'Memindahkan kandidat ke tahap berikutnya',
+                    decide: 'Memberi keputusan akhir (diterima atau tidak lolos)',
+                },
+                notes: {
+                    write: 'Menulis catatan internal',
+                },
+                evaluations: {
+                    write: 'Mengisi evaluasi kandidat',
+                },
+                learning: {
+                    manage: 'Membuat dan mengubah program dan materi',
+                    assign: 'Menugaskan program ke kandidat',
+                },
+                exams: {
+                    manage: 'Mengelola bank soal dan ujian',
+                    assign: 'Menugaskan ujian dan mengatur jadwal khusus',
+                },
+                grading: {
+                    grade: 'Menilai jawaban esai dan isian',
+                },
+                results: {
+                    release: 'Mempublikasikan hasil ujian',
+                },
+                reports: {
+                    view: 'Melihat laporan',
+                    export: 'Mengekspor laporan ke CSV',
+                },
+                staff: {
+                    manage: 'Mengelola akun staf',
+                },
+                roles: {
+                    manage: 'Mengatur jabatan dan hak akses',
+                },
+                audit: {
+                    view: 'Melihat audit log',
+                },
             },
         },
         reports: {
@@ -1132,7 +1297,21 @@ export const id = {
                 reasonRequired: 'Alasan wajib diisi untuk tahap ini.',
                 reasonPlaceholder: 'Tuliskan alasan perubahan tahap',
                 noTransitions:
-                    'Tahap ini sudah final dan tidak dapat diubah lagi.',
+                    'Tidak ada perpindahan yang dapat Anda lakukan dari tahap ini.',
+                pipelineLabel: 'Alur tahap rekrutmen ini',
+                stepDone: 'sudah dilalui',
+                stepCurrent: 'tahap saat ini',
+                stepUpcoming: 'belum',
+                sequentialHint:
+                    'Kandidat dipindahkan berurutan; tahap tidak bisa dilewati.',
+                actions: {
+                    advance: 'Pindahkan ke :stage',
+                    hired: 'Tandai diterima',
+                    rejected: 'Tandai tidak lolos',
+                    withdrawn: 'Mengundurkan diri',
+                    correction: 'Koreksi: kembalikan ke :stage',
+                },
+                confirmTitle: 'Pindahkan kandidat ke ":stage"?',
                 closedCampaign:
                     'Rekrutmen ini sudah ditutup, jadi tahap hanya bisa diubah Super Admin.',
                 since: 'sejak :date',

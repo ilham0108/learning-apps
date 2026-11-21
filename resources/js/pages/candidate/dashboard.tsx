@@ -218,8 +218,7 @@ export default function CandidateDashboard({
                                             />
                                         </div>
                                         <StageTimeline
-                                            stage={application.stage}
-                                            position={application.position}
+                                            application={application}
                                         />
                                     </CardContent>
                                 </Card>

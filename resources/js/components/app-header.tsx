@@ -45,7 +45,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
     const { auth } = usePage().props;
     const getInitials = useInitials();
     const { isCurrentUrl, whenCurrentUrl } = useCurrentUrl();
-    const items = navigationFor(auth.user.role);
+    const items = navigationFor(auth.user);
 
     return (
         <>

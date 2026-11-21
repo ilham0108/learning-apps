@@ -62,6 +62,11 @@ class RecruitmentCampaign extends Model
      */
     public function scopeVisibleTo(Builder $query, User $user): void
     {
+        // Super Admin dan jabatan dengan hak "lihat semua rekrutmen" tidak dibatasi.
+        if ($user->seesAllCampaigns()) {
+            return;
+        }
+
         match ($user->role) {
             Role::SuperAdmin => null,
             Role::Hr => $query->whereIn($this->qualifyColumn('id'), self::assignedCampaignIds($user)),
@@ -113,5 +118,15 @@ class RecruitmentCampaign extends Model
     public function applications(): HasMany
     {
         return $this->hasMany(RecruitmentApplication::class);
+    }
+
+    /**
+     * Tahap proses rekrutmen ini, berurutan.
+     *
+     * @return HasMany<CampaignStage, $this>
+     */
+    public function stages(): HasMany
+    {
+        return $this->hasMany(CampaignStage::class)->orderBy('position');
     }
 }

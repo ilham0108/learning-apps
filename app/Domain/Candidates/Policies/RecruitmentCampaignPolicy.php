@@ -2,19 +2,20 @@
 
 namespace App\Domain\Candidates\Policies;
 
+use App\Domain\Access\Enums\Permission;
 use App\Domain\Candidates\Models\RecruitmentCampaign;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
 
 /**
- * Data di luar lingkup rekrutmen dikembalikan sebagai 404, bukan 403,
- * agar keberadaan data milik HR lain tidak terungkap.
+ * Staf melihat rekrutmen dalam lingkupnya (yang ditugaskan, atau semua jika
+ * memiliki hak `campaigns.view_all`). Tindakan diatur hak jabatan.
  */
 class RecruitmentCampaignPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->isSuperAdmin() || $user->isHr();
+        return ! $user->isCandidate();
     }
 
     public function view(User $user, RecruitmentCampaign $campaign): Response
@@ -24,24 +25,31 @@ class RecruitmentCampaignPolicy
 
     public function create(User $user): bool
     {
-        return $user->isSuperAdmin() || $user->isHr();
+        return $user->hasPermission(Permission::CampaignsManage);
     }
 
     public function update(User $user, RecruitmentCampaign $campaign): Response
     {
-        return $this->inScope($user, $campaign);
+        return $this->inScopeWith($user, $campaign, Permission::CampaignsManage);
     }
 
-    /**
-     * Menugaskan atau melepas HR dari rekrutmen hanya oleh Super Admin.
-     */
     public function manageTeam(User $user, RecruitmentCampaign $campaign): Response
+    {
+        return $this->inScopeWith($user, $campaign, Permission::CampaignsAssignTeam);
+    }
+
+    public function managePipeline(User $user, RecruitmentCampaign $campaign): Response
+    {
+        return $this->inScopeWith($user, $campaign, Permission::PipelineManageCampaign);
+    }
+
+    private function inScopeWith(User $user, RecruitmentCampaign $campaign, Permission $permission): Response
     {
         if (! $this->inScope($user, $campaign)->allowed()) {
             return Response::denyAsNotFound();
         }
 
-        return $user->isSuperAdmin() ? Response::allow() : Response::deny();
+        return $user->hasPermission($permission) ? Response::allow() : Response::deny();
     }
 
     private function inScope(User $user, RecruitmentCampaign $campaign): Response

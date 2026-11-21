@@ -14,6 +14,13 @@ export type Column<Row> = {
     className?: string;
 };
 
+export type RowSelection<Row> = {
+    selected: string[];
+    onChange: (ids: string[]) => void;
+    /** Label aksesibel kotak centang per baris. */
+    label: (row: Row) => string;
+};
+
 type Props<Row extends { id: string }> = {
     columns: Column<Row>[];
     rows: Row[];
@@ -22,6 +29,8 @@ type Props<Row extends { id: string }> = {
     onSort?: (sortKey: string, direction: SortDirection) => void;
     empty: ReactNode;
     caption?: string;
+    /** Aktifkan kolom kotak centang untuk aksi massal. */
+    selection?: RowSelection<Row>;
 };
 
 /**
@@ -36,10 +45,24 @@ export function DataTable<Row extends { id: string }>({
     onSort,
     empty,
     caption,
+    selection,
 }: Props<Row>) {
     if (rows.length === 0) {
         return <>{empty}</>;
     }
+
+    const selectedOnPage = selection
+        ? rows.filter((row) => selection.selected.includes(row.id))
+        : [];
+    const allSelected = selectedOnPage.length === rows.length;
+    const toggleAll = () =>
+        selection?.onChange(allSelected ? [] : rows.map((row) => row.id));
+    const toggleRow = (id: string, checked: boolean) =>
+        selection?.onChange(
+            checked
+                ? [...selection.selected, id]
+                : selection.selected.filter((item) => item !== id),
+        );
 
     return (
         <div className="overflow-x-auto rounded-xl border">
@@ -47,6 +70,24 @@ export function DataTable<Row extends { id: string }>({
                 {caption && <caption className="sr-only">{caption}</caption>}
                 <thead className="bg-muted/50 text-left text-muted-foreground">
                     <tr>
+                        {selection && (
+                            <th scope="col" className="w-10 px-4 py-3">
+                                <input
+                                    type="checkbox"
+                                    checked={allSelected}
+                                    ref={(input) => {
+                                        if (input) {
+                                            input.indeterminate =
+                                                selectedOnPage.length > 0 &&
+                                                !allSelected;
+                                        }
+                                    }}
+                                    onChange={toggleAll}
+                                    aria-label={t('common.selectAll')}
+                                    className="size-4 accent-primary"
+                                />
+                            </th>
+                        )}
                         {columns.map((column) => {
                             const isSorted =
                                 column.sortKey !== undefined &&
@@ -108,8 +149,30 @@ export function DataTable<Row extends { id: string }>({
                     {rows.map((row) => (
                         <tr
                             key={row.id}
-                            className="border-t align-top hover:bg-muted/30"
+                            className={cn(
+                                'border-t align-top hover:bg-muted/30',
+                                selection?.selected.includes(row.id) &&
+                                    'bg-muted/40',
+                            )}
                         >
+                            {selection && (
+                                <td className="w-10 px-4 py-3">
+                                    <input
+                                        type="checkbox"
+                                        checked={selection.selected.includes(
+                                            row.id,
+                                        )}
+                                        onChange={(event) =>
+                                            toggleRow(
+                                                row.id,
+                                                event.target.checked,
+                                            )
+                                        }
+                                        aria-label={selection.label(row)}
+                                        className="mt-0.5 size-4 accent-primary"
+                                    />
+                                </td>
+                            )}
                             {columns.map((column) => (
                                 <td
                                     key={column.key}

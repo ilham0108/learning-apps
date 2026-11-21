@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Domain\Access\Actions\CreateActivationLink;
+use App\Domain\Access\Enums\Permission;
 use App\Domain\Candidates\Actions\RegisterCandidate;
 use App\Domain\Candidates\Actions\SetCandidateActive;
 use App\Domain\Candidates\Models\CandidateProfile;
@@ -45,7 +46,7 @@ class CandidateController extends Controller
             ->select('candidate_profiles.*')
             ->with([
                 'user',
-                'applications' => fn ($query) => $query->visibleTo($user)->with('campaign.position')->latest('applied_at'),
+                'applications' => fn ($query) => $query->visibleTo($user)->with(['campaign.position', 'campaignStage'])->latest('applied_at'),
             ])
             ->when($filters['search'], fn ($query, string $search) => $query->where(fn ($query) => $query
                 ->where('users.name', 'like', Search::contains($search))
@@ -103,6 +104,8 @@ class CandidateController extends Controller
                 ->visibleTo($request->user())
                 ->with([
                     'campaign.position.department',
+                    'campaign.stages',
+                    'campaignStage',
                     'stageHistories.changer',
                     'internalNotes.author',
                     'evaluations.evaluator',
@@ -121,7 +124,7 @@ class CandidateController extends Controller
         return Inertia::render('admin/candidates/show', [
             'candidate' => CandidateDetailResource::make($candidate)->resolve($request),
             'canUpdate' => $request->user()->can('update', $candidate),
-            'personalData' => PersonalDataPresenter::make($candidate),
+            'personalData' => PersonalDataPresenter::make($candidate, $request->user()->hasPermission(Permission::CandidatesViewSensitive)),
             // Program per lamaran beserta progres kandidat.
             'programAssignments' => $candidate->applications->mapWithKeys(fn (RecruitmentApplication $application) => [
                 $application->public_id => $application->programAssignments->map(fn (ProgramAssignment $assignment) => [

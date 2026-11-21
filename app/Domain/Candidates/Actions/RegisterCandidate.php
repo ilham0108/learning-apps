@@ -62,6 +62,7 @@ class RegisterCandidate
             $application->stageHistories()->create([
                 'from_stage' => null,
                 'to_stage' => $stage,
+                'to_label' => $stage->label(),
                 'changed_by' => $actor->id,
             ]);
 

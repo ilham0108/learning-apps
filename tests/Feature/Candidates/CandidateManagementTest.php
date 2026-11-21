@@ -127,7 +127,7 @@ class CandidateManagementTest extends TestCase
         RecruitmentApplication::factory()->count(3)->create();
         $target = $inScope->first();
         $target->candidateProfile->user->update(['name' => 'Zzqx Vortanen']);
-        $target->update(['stage' => RecruitmentStage::Shortlisted]);
+        $target->update(['stage' => RecruitmentStage::InProcess]);
 
         $this->actingAs($this->hr);
 
@@ -140,7 +140,7 @@ class CandidateManagementTest extends TestCase
             ->has('candidates.data', 1)
             ->where('candidates.data.0.id', $target->candidateProfile->public_id));
 
-        $this->get(route('admin.candidates.index', ['stage' => 'shortlisted']))->assertInertia(fn (Assert $page) => $page
+        $this->get(route('admin.candidates.index', ['stage' => 'in_process']))->assertInertia(fn (Assert $page) => $page
             ->where('candidates.meta.total', 1));
 
         $this->get(route('admin.candidates.index', ['sort' => 'name', 'direction' => 'desc']))->assertInertia(fn (Assert $page) => $page

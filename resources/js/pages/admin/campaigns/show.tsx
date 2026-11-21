@@ -4,6 +4,7 @@ import type { FormEvent } from 'react';
 import { useState } from 'react';
 import { PageHeader } from '@/components/app/page-header';
 import { CampaignFormDialog } from '@/components/campaigns/campaign-form-dialog';
+import { PipelineEditor } from '@/components/campaigns/pipeline-editor';
 import { CandidateFormDialog } from '@/components/candidates/candidate-form-dialog';
 import {
     CampaignStatusBadge,
@@ -38,6 +39,7 @@ import candidates from '@/routes/admin/candidates';
 import type {
     CampaignDetail,
     HrUserOption,
+    PipelineStage,
     PositionOption,
     RecruitmentStage,
 } from '@/types';
@@ -45,6 +47,8 @@ import type {
 type Props = {
     campaign: CampaignDetail;
     stageCounts: Partial<Record<RecruitmentStage, number>>;
+    pipeline: PipelineStage[];
+    canManagePipeline: boolean;
     canUpdate: boolean;
     positions: PositionOption[];
     canManageTeam: boolean;
@@ -54,8 +58,7 @@ type Props = {
 const stageOrder: RecruitmentStage[] = [
     'invited',
     'registered',
-    'under_review',
-    'shortlisted',
+    'in_process',
     'hired',
     'rejected',
     'withdrawn',
@@ -64,6 +67,8 @@ const stageOrder: RecruitmentStage[] = [
 export default function CampaignShow({
     campaign,
     stageCounts,
+    pipeline,
+    canManagePipeline,
     canUpdate,
     positions,
     canManageTeam,
@@ -201,6 +206,33 @@ export default function CampaignShow({
                         </CardContent>
                     </Card>
                 </div>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>
+                            {t('admin.pipeline.campaignTitle')}
+                        </CardTitle>
+                        <CardDescription>
+                            {t('admin.pipeline.campaignDescription')}
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <PipelineEditor
+                            stages={pipeline}
+                            editable={canManagePipeline}
+                            routes={{
+                                store: () =>
+                                    campaigns.stages.store(campaign.id),
+                                update: (id) =>
+                                    campaigns.stages.update([campaign.id, id]),
+                                move: (id) =>
+                                    campaigns.stages.move([campaign.id, id]),
+                                destroy: (id) =>
+                                    campaigns.stages.destroy([campaign.id, id]),
+                            }}
+                        />
+                    </CardContent>
+                </Card>
 
                 <Card>
                     <CardHeader className="flex flex-row items-start justify-between gap-2">

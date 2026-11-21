@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Domain\Candidates\Enums\RecruitmentStage;
 use App\Domain\Candidates\Models\CandidateEvaluation;
 use App\Domain\Candidates\Models\CandidateProfile;
 use App\Domain\Candidates\Models\RecruitmentApplication;
@@ -144,7 +143,7 @@ class DashboardTest extends TestCase
         $first = RecruitmentCampaign::factory()->assignedTo($hr)->create();
         $second = RecruitmentCampaign::factory()->assignedTo($hr)->create();
         RecruitmentApplication::factory()->count(2)->for($first, 'campaign')->create();
-        RecruitmentApplication::factory()->for($second, 'campaign')->stage(RecruitmentStage::Shortlisted)->create();
+        RecruitmentApplication::factory()->for($second, 'campaign')->inProcess()->create();
         RecruitmentApplication::factory()->for($second, 'campaign')->create(['applied_at' => now()->subDays(60)]);
 
         $this->actingAs($hr);
@@ -152,7 +151,7 @@ class DashboardTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->where('stats.total_candidates', 2)
                 ->where('filters.campaign', $first->public_id));
-        $this->get(route('admin.dashboard', ['stage' => 'shortlisted']))
+        $this->get(route('admin.dashboard', ['stage' => 'in_process']))
             ->assertInertia(fn (Assert $page) => $page->where('stats.total_candidates', 1));
         $this->get(route('admin.dashboard', ['period' => 30]))
             ->assertInertia(fn (Assert $page) => $page->where('stats.total_candidates', 3));
@@ -190,7 +189,7 @@ class DashboardTest extends TestCase
         $hr = User::factory()->hr()->create();
         $campaign = RecruitmentCampaign::factory()->assignedTo($hr)->create();
         $application = RecruitmentApplication::factory()->for($campaign, 'campaign')->create();
-        $application->stageHistories()->create(['from_stage' => 'invited', 'to_stage' => 'registered', 'created_at' => now()->subHour()]);
+        $application->stageHistories()->create(['from_stage' => 'invited', 'to_stage' => 'registered', 'from_label' => 'Diundang', 'to_label' => 'Terdaftar', 'created_at' => now()->subHour()]);
         $exam = Exam::factory()->published()->create(['title' => 'Tes Produk']);
         ExamAttempt::factory()->graded()->create([
             'exam_assignment_id' => ExamAssignment::factory()->create(['exam_id' => $exam->id, 'recruitment_application_id' => $application->id])->id,
@@ -202,7 +201,7 @@ class DashboardTest extends TestCase
                 ->where('activity.0.detail', 'Tes Produk')
                 ->where('activity.0.candidate.id', $application->candidateProfile->public_id)
                 ->where('activity.1.type', 'stage_changed')
-                ->where('activity.1.detail', 'registered'));
+                ->where('activity.1.detail', 'Terdaftar'));
     }
 
     public function test_candidates_cannot_open_the_hr_dashboard()

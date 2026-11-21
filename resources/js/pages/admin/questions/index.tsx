@@ -1,5 +1,7 @@
-import { Head, Link } from '@inertiajs/react';
-import { Plus, Tags } from 'lucide-react';
+import { Head, Link, router } from '@inertiajs/react';
+import { FileSpreadsheet, Plus, Tags, Trash2, X } from 'lucide-react';
+import { useState } from 'react';
+import { ConfirmDialog } from '@/components/app/confirm-dialog';
 import type { Column } from '@/components/app/data-table';
 import { DataTable } from '@/components/app/data-table';
 import { EmptyState } from '@/components/app/empty-state';
@@ -9,6 +11,7 @@ import { PageHeader } from '@/components/app/page-header';
 import { Pagination } from '@/components/app/pagination';
 import { QuestionFilters } from '@/components/questions/question-filters';
 import type { QuestionFilterValues } from '@/components/questions/question-filters';
+import { QuestionImportDialog } from '@/components/questions/question-import-dialog';
 import { Button } from '@/components/ui/button';
 import { useQueryFilters } from '@/hooks/use-query-filters';
 import { t } from '@/lib/i18n';
@@ -36,6 +39,27 @@ export default function QuestionsIndex({
 }: Props) {
     const apply = useQueryFilters(questions.index().url, filters);
     const isFiltered = Object.values(filters).some((value) => value !== null);
+    const [importing, setImporting] = useState(false);
+    const [selection, setSelection] = useState<string[]>([]);
+    const [confirmingDelete, setConfirmingDelete] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+
+    // Pilihan berlaku per halaman: id yang tidak tampil lagi (pindah halaman/filter) diabaikan.
+    const selected = selection.filter((id) =>
+        page.data.some((question) => question.id === id),
+    );
+
+    const deleteSelected = () =>
+        router.delete(questions.destroyMany().url, {
+            data: { ids: selected },
+            preserveScroll: true,
+            onStart: () => setDeleting(true),
+            onFinish: () => setDeleting(false),
+            onSuccess: () => {
+                setSelection([]);
+                setConfirmingDelete(false);
+            },
+        });
 
     const columns: Column<QuestionListItem>[] = [
         {
@@ -119,6 +143,13 @@ export default function QuestionsIndex({
                                     {t('admin.questions.manageCategories')}
                                 </Link>
                             </Button>
+                            <Button
+                                variant="outline"
+                                onClick={() => setImporting(true)}
+                            >
+                                <FileSpreadsheet aria-hidden="true" />
+                                {t('admin.questions.import.action')}
+                            </Button>
                             <Button asChild>
                                 <Link href={questions.create()}>
                                     <Plus aria-hidden="true" />
@@ -157,9 +188,46 @@ export default function QuestionsIndex({
                     />
                 </div>
 
+                {selected.length > 0 && (
+                    <div
+                        className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/40 px-4 py-2 text-sm"
+                        aria-live="polite"
+                    >
+                        <span className="font-medium">
+                            {t('common.selectedCount', {
+                                count: selected.length,
+                            })}
+                        </span>
+                        <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => setConfirmingDelete(true)}
+                        >
+                            <Trash2 aria-hidden="true" />
+                            {t('admin.questions.bulkDelete.action')}
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setSelection([])}
+                        >
+                            <X aria-hidden="true" />
+                            {t('common.clearSelection')}
+                        </Button>
+                    </div>
+                )}
+
                 <DataTable
                     columns={columns}
                     rows={page.data}
+                    selection={{
+                        selected,
+                        onChange: setSelection,
+                        label: (question) =>
+                            t('admin.questions.select', {
+                                text: question.excerpt,
+                            }),
+                    }}
                     caption={t('admin.questions.title')}
                     empty={
                         <EmptyState
@@ -182,6 +250,25 @@ export default function QuestionsIndex({
                     onPageChange={(pageNumber) => apply({ page: pageNumber })}
                 />
             </div>
+
+            <ConfirmDialog
+                open={confirmingDelete}
+                onOpenChange={setConfirmingDelete}
+                title={t('admin.questions.bulkDelete.title', {
+                    count: selected.length,
+                })}
+                description={t('admin.questions.bulkDelete.description')}
+                confirmLabel={t('admin.questions.bulkDelete.confirm', {
+                    count: selected.length,
+                })}
+                destructive
+                processing={deleting}
+                onConfirm={deleteSelected}
+            />
+
+            {importing && (
+                <QuestionImportDialog onClose={() => setImporting(false)} />
+            )}
         </>
     );
 }

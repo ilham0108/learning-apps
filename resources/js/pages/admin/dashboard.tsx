@@ -76,8 +76,7 @@ type Props = {
 const stages: RecruitmentStage[] = [
     'invited',
     'registered',
-    'under_review',
-    'shortlisted',
+    'in_process',
     'rejected',
     'hired',
     'withdrawn',
@@ -98,14 +97,10 @@ export default function AdminDashboard({
     const apply = useQueryFilters(dashboard().url, filters);
     const isFiltered = Object.values(filters).some((value) => value !== null);
 
+    // Detail perubahan tahap sudah berupa nama tahap yang tersimpan di riwayat.
     const activityText = (item: Props['activity'][number]) =>
         t(`admin.dashboard.activity.${item.type}`, {
-            detail:
-                item.type === 'stage_changed' && item.detail
-                    ? t(
-                          `status.recruitmentStage.${item.detail as RecruitmentStage}`,
-                      )
-                    : (item.detail ?? ''),
+            detail: item.detail ?? '',
         });
 
     return (

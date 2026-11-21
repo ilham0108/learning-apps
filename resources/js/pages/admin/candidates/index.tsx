@@ -44,8 +44,7 @@ type Props = {
 const stages: RecruitmentStage[] = [
     'invited',
     'registered',
-    'under_review',
-    'shortlisted',
+    'in_process',
     'hired',
     'rejected',
     'withdrawn',
@@ -105,7 +104,10 @@ export default function CandidatesIndex({
                             <span className="text-xs">
                                 {application.campaign}
                             </span>
-                            <RecruitmentStageBadge stage={application.stage} />
+                            <RecruitmentStageBadge
+                                stage={application.stage}
+                                label={application.stage_label}
+                            />
                         </li>
                     ))}
                 </ul>

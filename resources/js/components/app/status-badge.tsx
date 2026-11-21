@@ -47,17 +47,26 @@ export function StatusBadge({
 const stageTones: Record<RecruitmentStage, StatusTone> = {
     invited: 'neutral',
     registered: 'info',
-    under_review: 'warning',
-    shortlisted: 'info',
+    in_process: 'warning',
     rejected: 'danger',
     hired: 'success',
     withdrawn: 'neutral',
 };
 
-export function RecruitmentStageBadge({ stage }: { stage: RecruitmentStage }) {
+/**
+ * Badge tahap lamaran. `label` berisi nama tahap proses (misalnya "Psikotes")
+ * untuk kategori `in_process`; tanpa label dipakai nama kategori.
+ */
+export function RecruitmentStageBadge({
+    stage,
+    label,
+}: {
+    stage: RecruitmentStage;
+    label?: string;
+}) {
     return (
         <StatusBadge
-            label={t(`status.recruitmentStage.${stage}`)}
+            label={label ?? t(`status.recruitmentStage.${stage}`)}
             tone={stageTones[stage]}
         />
     );

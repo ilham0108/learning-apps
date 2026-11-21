@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Domain\Candidates\Actions\SaveCampaign;
 use App\Domain\Candidates\Actions\SyncCampaignTeam;
 use App\Domain\Candidates\Enums\CampaignStatus;
+use App\Domain\Candidates\Enums\RecruitmentStage;
+use App\Domain\Candidates\Models\CampaignStage;
 use App\Domain\Candidates\Models\Position;
 use App\Domain\Candidates\Models\RecruitmentCampaign;
 use App\Http\Controllers\Controller;
@@ -82,6 +84,18 @@ class CampaignController extends Controller
                 ->selectRaw('stage, count(*) as total')
                 ->groupBy('stage')
                 ->pluck('total', 'stage'),
+            // Alur tahap proses rekrutmen ini beserta jumlah kandidat yang sedang di setiap tahap.
+            'pipeline' => $campaign->stages()
+                ->withCount(['applications as current_count' => fn ($query) => $query->where('stage', RecruitmentStage::InProcess)])
+                ->withCount('applications as used_count')
+                ->get()
+                ->map(fn (CampaignStage $stage) => [
+                    'id' => $stage->public_id,
+                    'name' => $stage->name,
+                    'current_count' => $stage->current_count,
+                    'removable' => $stage->used_count === 0,
+                ])->all(),
+            'canManagePipeline' => $request->user()->can('managePipeline', $campaign),
             'canUpdate' => $canUpdate,
             // Pilihan posisi untuk modal "Ubah rekrutmen".
             'positions' => $canUpdate ? $this->positionOptions($campaign->position) : [],

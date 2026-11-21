@@ -24,6 +24,12 @@ class OwnApplicationResource extends JsonResource
             'position' => $this->campaign->position->name,
             'department' => $this->campaign->position->department->name,
             'stage' => $this->stage->value,
+            'stage_label' => $this->resource->stageLabel(),
+            // Nama tahap proses rekrutmen ini dan posisi kandidat di dalamnya (untuk timeline).
+            'pipeline' => $this->campaign->stages->pluck('name')->values()->all(),
+            'current_step' => $this->campaign_stage_id === null
+                ? null
+                : $this->campaign->stages->search(fn ($stage) => $stage->id === $this->campaign_stage_id),
             'applied_at' => $this->applied_at->toIso8601String(),
         ];
     }

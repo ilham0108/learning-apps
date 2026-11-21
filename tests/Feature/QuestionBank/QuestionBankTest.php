@@ -195,6 +195,35 @@ class QuestionBankTest extends TestCase
         $this->assertSame(QuestionStatus::Archived, $used->refresh()->status);
     }
 
+    public function test_many_questions_can_be_deleted_at_once_skipping_used_ones()
+    {
+        $used = Question::factory()->create(['question_category_id' => $this->category->id]);
+        Exam::factory()->withQuestions([$used])->create();
+        $case = Question::factory()->caseStudy()->create(['question_category_id' => $this->category->id]);
+        $plain = Question::factory()->create(['question_category_id' => $this->category->id]);
+        $kept = Question::factory()->create(['question_category_id' => $this->category->id]);
+        $child = $case->children()->firstOrFail();
+
+        $this->from(route('admin.questions.index'))
+            ->delete(route('admin.questions.destroy-many'), ['ids' => [$used->public_id, $case->public_id, $plain->public_id, $child->public_id]])
+            ->assertRedirect(route('admin.questions.index'))
+            ->assertInertiaFlash('toast.type', 'warning');
+
+        $this->assertModelExists($used);
+        $this->assertModelExists($kept);
+        $this->assertModelMissing($case);
+        $this->assertModelMissing($plain);
+        $this->assertModelMissing($child);
+        $this->assertSame(2, Question::query()->count());
+        $this->assertDatabaseCount('activity_logs', 2);
+    }
+
+    public function test_bulk_delete_requires_valid_ids()
+    {
+        $this->delete(route('admin.questions.destroy-many'), ['ids' => []])->assertSessionHasErrors('ids');
+        $this->delete(route('admin.questions.destroy-many'), ['ids' => ['bukan-ulid']])->assertSessionHasErrors('ids.0');
+    }
+
     public function test_index_lists_current_top_level_questions_with_filters()
     {
         Question::factory()->count(2)->multipleChoice()->create(['question_category_id' => $this->category->id]);

@@ -56,7 +56,8 @@ class CandidatesReport extends Report
         $where = ' where pa.recruitment_application_id = a.id and m_r.archived_at is null and m_r.is_required = 1';
 
         return $this->applications($applications)
-            ->select(['cp.candidate_number', 'u.name', 'u.email', 'cp.phone', 'c.name as campaign', 'pos.name as position', 'a.stage', 'a.applied_at'])
+            ->leftJoin('campaign_stages as cs', 'cs.id', '=', 'a.campaign_stage_id')
+            ->select(['cp.candidate_number', 'u.name', 'u.email', 'cp.phone', 'c.name as campaign', 'pos.name as position', 'a.stage', 'cs.name as stage_name', 'a.applied_at'])
             ->selectRaw("(select count(*) {$required}{$where}) as required_total")
             ->selectRaw("(select count(*) {$required} join material_progress p_r on p_r.learning_material_id = m_r.id{$where}"
                 .' and p_r.candidate_profile_id = a.candidate_profile_id and p_r.completed_at is not null) as required_completed')
@@ -76,7 +77,7 @@ class CandidatesReport extends Report
             'phone' => $row->phone,
             'campaign' => $row->campaign,
             'position' => $row->position,
-            'stage' => ReportValues::stage($row->stage),
+            'stage' => ReportValues::stage($row->stage, $row->stage_name),
             'applied_at' => ReportValues::dateTime($row->applied_at),
             'learning_percent' => ReportValues::percent($row->required_completed, $row->required_total),
             'exams_assigned' => (int) $row->exams_assigned,

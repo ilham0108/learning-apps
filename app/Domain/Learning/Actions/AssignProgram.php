@@ -22,8 +22,7 @@ class AssignProgram
     public const ACTIVE_STAGES = [
         RecruitmentStage::Invited,
         RecruitmentStage::Registered,
-        RecruitmentStage::UnderReview,
-        RecruitmentStage::Shortlisted,
+        RecruitmentStage::InProcess,
     ];
 
     public function __construct(private readonly ActivityLogger $logger) {}

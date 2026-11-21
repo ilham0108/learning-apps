@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Domain\Access\Models\DataDeletionRequest;
+use App\Domain\Access\Models\JobRole;
 use App\Domain\Candidates\Models\CandidateEvaluation;
 use App\Domain\Candidates\Models\CandidateProfile;
 use App\Domain\Candidates\Models\InternalNote;
@@ -79,6 +80,7 @@ class AppServiceProvider extends ServiceProvider
 
         Relation::enforceMorphMap([
             'user' => User::class,
+            'job_role' => JobRole::class,
             'candidate_profile' => CandidateProfile::class,
             'recruitment_campaign' => RecruitmentCampaign::class,
             'recruitment_application' => RecruitmentApplication::class,

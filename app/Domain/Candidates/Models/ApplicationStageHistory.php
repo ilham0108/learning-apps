@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $changed_by
  * @property CarbonImmutable|null $created_at
  */
-#[Fillable(['recruitment_application_id', 'from_stage', 'to_stage', 'reason', 'changed_by'])]
+#[Fillable(['recruitment_application_id', 'from_stage', 'to_stage', 'from_label', 'to_label', 'reason', 'changed_by'])]
 class ApplicationStageHistory extends Model
 {
     public const UPDATED_AT = null;

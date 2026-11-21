@@ -102,12 +102,14 @@ export function AccountActions({ candidate }: { candidate: CandidateDetail }) {
     );
 }
 
-function ActivationLinkDialog({
+export function ActivationLinkDialog({
     link,
     onClose,
+    description = t('admin.candidates.activation.description'),
 }: {
     link: string;
     onClose: () => void;
+    description?: string;
 }) {
     const [copiedText, copy] = useClipboard();
     const copied = copiedText === link;
@@ -119,9 +121,7 @@ function ActivationLinkDialog({
                     <DialogTitle>
                         {t('admin.candidates.activation.title')}
                     </DialogTitle>
-                    <DialogDescription>
-                        {t('admin.candidates.activation.description')}
-                    </DialogDescription>
+                    <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
                 <div className="flex gap-2">
                     <Input

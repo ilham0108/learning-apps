@@ -39,6 +39,8 @@ export {
     CloudOff as OfflineIcon,
     History as HistoryIcon,
     Lock as LockedIcon,
+    UserCog as StaffIcon,
+    Workflow as PipelineIcon,
     ScrollText as AuditIcon,
     Download as DownloadIcon,
 } from 'lucide-react';

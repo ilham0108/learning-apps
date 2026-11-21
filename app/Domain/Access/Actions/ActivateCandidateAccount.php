@@ -38,6 +38,8 @@ class ActivateCandidateAccount
                     $application->stageHistories()->create([
                         'from_stage' => RecruitmentStage::Invited,
                         'to_stage' => RecruitmentStage::Registered,
+                        'from_label' => RecruitmentStage::Invited->label(),
+                        'to_label' => RecruitmentStage::Registered->label(),
                         'changed_by' => null,
                     ]);
                 });

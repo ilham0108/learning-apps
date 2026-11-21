@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Domain\Access\Models\JobRole;
 use App\Domain\Shared\Enums\Role;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -46,10 +47,32 @@ class UserFactory extends Factory
         ]);
     }
 
+    /**
+     * Staf dengan jabatan HR Recruiter (hak setara role HR sebelum ada jabatan).
+     */
     public function hr(): static
+    {
+        return $this->withJobRole(JobRole::HR_RECRUITER);
+    }
+
+    public function headHr(): static
+    {
+        return $this->withJobRole(JobRole::HEAD_HR);
+    }
+
+    public function interviewer(): static
+    {
+        return $this->withJobRole(JobRole::INTERVIEWER);
+    }
+
+    /**
+     * Staf dengan jabatan tertentu (kunci jabatan sistem atau model JobRole).
+     */
+    public function withJobRole(string|JobRole $jobRole): static
     {
         return $this->state(fn (array $attributes) => [
             'role' => Role::Hr,
+            'job_role_id' => $jobRole instanceof JobRole ? $jobRole->id : JobRole::byKey($jobRole)->id,
         ]);
     }
 

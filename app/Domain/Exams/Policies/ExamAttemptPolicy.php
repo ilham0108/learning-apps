@@ -2,6 +2,7 @@
 
 namespace App\Domain\Exams\Policies;
 
+use App\Domain\Access\Enums\Permission;
 use App\Domain\Exams\Models\ExamAttempt;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
@@ -30,7 +31,7 @@ class ExamAttemptPolicy
      */
     public function grade(User $user, ExamAttempt $attempt): Response
     {
-        return $user->isCandidate() ? Response::denyAsNotFound() : $this->inScope($user, $attempt);
+        return $user->hasPermission(Permission::GradingGrade) ? $this->inScope($user, $attempt) : Response::denyAsNotFound();
     }
 
     private function inScope(User $user, ExamAttempt $attempt): Response

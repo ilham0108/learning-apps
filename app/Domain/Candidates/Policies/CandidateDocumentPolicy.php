@@ -2,6 +2,7 @@
 
 namespace App\Domain\Candidates\Policies;
 
+use App\Domain\Access\Enums\Permission;
 use App\Domain\Candidates\Models\CandidateDocument;
 use App\Domain\Candidates\Models\CandidateProfile;
 use App\Models\User;
@@ -16,7 +17,12 @@ class CandidateDocumentPolicy
 {
     public function view(User $user, CandidateDocument $document): Response
     {
-        return CandidateProfile::query()->visibleTo($user)->whereKey($document->candidate_profile_id)->exists()
+        if (! CandidateProfile::query()->visibleTo($user)->whereKey($document->candidate_profile_id)->exists()) {
+            return Response::denyAsNotFound();
+        }
+
+        // Foto KTP hanya untuk kandidat pemiliknya dan staf dengan hak data sensitif.
+        return ! $document->type->isSensitive() || $user->isCandidate() || $user->hasPermission(Permission::CandidatesViewSensitive)
             ? Response::allow()
             : Response::denyAsNotFound();
     }

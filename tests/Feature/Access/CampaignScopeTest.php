@@ -56,14 +56,14 @@ class CampaignScopeTest extends TestCase
         $gate = Gate::forUser($this->hr);
 
         $this->assertTrue($gate->allows('view', $this->inScope->campaign));
-        $this->assertTrue($gate->allows('manage', $this->inScope));
+        $this->assertTrue($gate->allows('changeStage', $this->inScope));
         $this->assertTrue($gate->allows('view', $this->inScope->candidateProfile));
 
         $denied = $gate->inspect('view', $this->outOfScope->campaign);
         $this->assertTrue($denied->denied());
         $this->assertSame(404, $denied->status());
 
-        $this->assertSame(404, $gate->inspect('manage', $this->outOfScope)->status());
+        $this->assertSame(404, $gate->inspect('changeStage', $this->outOfScope)->status());
         $this->assertSame(404, $gate->inspect('view', $this->outOfScope->candidateProfile)->status());
     }
 
@@ -107,7 +107,7 @@ class CampaignScopeTest extends TestCase
         $this->assertEquals([$this->inScope->id], RecruitmentApplication::query()->visibleTo($candidate)->pluck('id')->all());
         $this->assertTrue($gate->allows('view', $this->inScope));
         $this->assertSame(404, $gate->inspect('view', $this->outOfScope)->status());
-        $this->assertTrue($gate->denies('manage', $this->inScope));
+        $this->assertTrue($gate->denies('changeStage', $this->inScope));
         $this->assertSame(0, RecruitmentCampaign::query()->visibleTo($candidate)->count());
         $this->assertTrue($gate->denies('viewAny', RecruitmentCampaign::class));
     }

@@ -3,6 +3,7 @@
 namespace App\Domain\Candidates\Actions;
 
 use App\Domain\Candidates\Enums\CampaignStatus;
+use App\Domain\Candidates\Models\PipelineStageTemplate;
 use App\Domain\Candidates\Models\RecruitmentCampaign;
 use App\Domain\Shared\Audit\ActivityLogger;
 use App\Models\User;
@@ -34,6 +35,13 @@ class SaveCampaign
                     default => now(),
                 },
             ])->save();
+
+            // Rekrutmen baru memakai salinan alur default; perubahan default berikutnya tidak memengaruhinya.
+            if ($isNew) {
+                PipelineStageTemplate::query()->orderBy('position')->get()->each(
+                    fn (PipelineStageTemplate $template) => $campaign->stages()->create(['name' => $template->name, 'position' => $template->position]),
+                );
+            }
 
             if ($isNew && $actor->isHr()) {
                 $campaign->hrUsers()->attach($actor->id, ['assigned_by' => $actor->id]);

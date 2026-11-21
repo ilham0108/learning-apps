@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Domain\Candidates\Enums\CampaignStatus;
+use App\Domain\Candidates\Models\CandidateProfile;
 use App\Domain\Candidates\Models\RecruitmentCampaign;
 use App\Http\Rules\PublicIdIn;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -12,6 +13,15 @@ use Illuminate\Http\Request;
 
 class StoreCandidateRequest extends FormRequest
 {
+    /**
+     * Hak diperiksa sebelum validasi, agar pengguna tanpa hak mendapat 403
+     * alih-alih pesan validasi.
+     */
+    public function authorize(): bool
+    {
+        return $this->user()->can('create', CandidateProfile::class);
+    }
+
     /**
      * @return array<string, ValidationRule|array<mixed>|string>
      */

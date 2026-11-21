@@ -33,6 +33,7 @@ class CandidateListResource extends JsonResource
                 'campaign' => $application->campaign->name,
                 'position' => $application->campaign->position->name,
                 'stage' => $application->stage->value,
+                'stage_label' => $application->stageLabel(),
             ])->values()->all(),
         ];
     }

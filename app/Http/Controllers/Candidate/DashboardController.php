@@ -38,7 +38,7 @@ class DashboardController extends Controller
 
         $applications = RecruitmentApplication::query()
             ->visibleTo($user)
-            ->with('campaign.position.department')
+            ->with(['campaign.position.department', 'campaign.stages', 'campaignStage'])
             ->withCount([
                 'evaluations',
                 'evaluations as final_evaluations_count' => fn ($query) => $query->where('status', EvaluationStatus::Final),

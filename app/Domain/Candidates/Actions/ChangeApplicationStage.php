@@ -2,55 +2,62 @@
 
 namespace App\Domain\Candidates\Actions;
 
-use App\Domain\Candidates\Enums\CampaignStatus;
 use App\Domain\Candidates\Enums\RecruitmentStage;
 use App\Domain\Candidates\Models\RecruitmentApplication;
+use App\Domain\Candidates\Support\StageTransitions;
 use App\Domain\Shared\Audit\ActivityLogger;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Mengubah tahap rekrutmen sesuai diagram transisi (docs/tahap-1.md bagian 10.1),
- * mencatat riwayat (siapa, kapan, dari apa ke apa, alasan) dan audit log.
+ * Memindahkan lamaran ke tahap berikutnya menurut StageTransitions. Setiap
+ * perubahan dicatat di riwayat tahap (dengan nama tahap saat itu) dan audit log.
  */
 class ChangeApplicationStage
 {
     public function __construct(private readonly ActivityLogger $logger) {}
 
-    public function __invoke(RecruitmentApplication $application, RecruitmentStage $target, ?string $reason, User $actor): void
+    public function __invoke(RecruitmentApplication $application, string $target, ?string $reason, User $actor): void
     {
         DB::transaction(function () use ($application, $target, $reason, $actor): void {
             /** @var RecruitmentApplication $locked */
-            $locked = RecruitmentApplication::query()->with('campaign')->lockForUpdate()->findOrFail($application->id);
-            $current = $locked->stage;
+            $locked = RecruitmentApplication::query()->lockForUpdate()->findOrFail($application->id);
+            $option = StageTransitions::find($locked, $actor, $target);
 
-            if (! $current->canBeChangedManuallyTo($target, $actor->isSuperAdmin())) {
-                throw ValidationException::withMessages(['stage' => __('Perubahan tahap ini tidak diizinkan.')]);
-            }
-
-            if ($locked->campaign->status === CampaignStatus::Closed && ! $actor->isSuperAdmin()) {
-                throw ValidationException::withMessages(['stage' => __('Tahap pada rekrutmen yang sudah ditutup hanya dapat diubah Super Admin.')]);
+            if ($option === null) {
+                throw ValidationException::withMessages(['target' => __('Perpindahan tahap ini tidak diizinkan. Kandidat hanya dapat maju ke tahap berikutnya secara berurutan.')]);
             }
 
             $reason = $reason !== null ? trim($reason) : null;
 
-            if ($current->requiresReason($target) && blank($reason)) {
+            if ($option['requires_reason'] && blank($reason)) {
                 throw ValidationException::withMessages(['reason' => __('Alasan wajib diisi untuk perubahan tahap ini.')]);
             }
 
-            $locked->update(['stage' => $target, 'stage_changed_at' => now()]);
+            $from = $locked->stage;
+            $fromLabel = $locked->stageLabel();
+
+            $locked->update([
+                'stage' => $option['stage'],
+                // Tahap proses terakhir tetap disimpan saat hasil akhir, agar terlihat di tahap mana keputusan diambil.
+                'campaign_stage_id' => $option['campaign_stage']?->id
+                    ?? ($option['stage'] === RecruitmentStage::Registered ? null : $locked->campaign_stage_id),
+                'stage_changed_at' => now(),
+            ]);
 
             $locked->stageHistories()->create([
-                'from_stage' => $current,
-                'to_stage' => $target,
+                'from_stage' => $from,
+                'to_stage' => $option['stage'],
+                'from_label' => $fromLabel,
+                'to_label' => $option['label'],
                 'reason' => $reason ?: null,
                 'changed_by' => $actor->id,
             ]);
 
             $this->logger->log('application.stage_changed', $locked, [
-                'from' => $current->value,
-                'to' => $target->value,
+                'from' => $fromLabel,
+                'to' => $option['label'],
             ], $reason ?: null, $actor);
         });
     }

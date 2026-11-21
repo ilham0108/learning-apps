@@ -125,21 +125,62 @@ class QuestionController extends Controller
     {
         abort_if($question->parent_id !== null, 404);
 
-        if ($question->previous_version_id !== null || ExamQuestion::query()->whereIn('question_id', $this->versionIds($question))->exists()) {
+        if (! $this->isDeletable($question)) {
             Inertia::flash('toast', ['type' => 'error', 'message' => __('Soal yang pernah dipakai ujian tidak dapat dihapus. Arsipkan soal ini.')]);
 
             return back();
         }
 
-        DB::transaction(function () use ($question, $logger): void {
-            $logger->log('question.deleted', null, ['question' => $question->public_id]);
-            $question->children()->each(fn (Question $child) => $child->delete());
-            $question->delete();
-        });
+        DB::transaction(fn () => $this->deleteTree($question, $logger));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Soal berhasil dihapus.')]);
 
         return to_route('admin.questions.index');
+    }
+
+    /**
+     * Hapus banyak soal sekaligus dari tabel. Soal yang pernah dipakai ujian
+     * dilewati (tetap harus diarsipkan), sisanya dihapus.
+     */
+    public function destroyMany(Request $request, ActivityLogger $logger): RedirectResponse
+    {
+        $ids = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:100'],
+            'ids.*' => ['required', 'ulid', 'distinct'],
+        ])['ids'];
+
+        $questions = Question::query()->current()->topLevel()->whereIn('public_id', $ids)->get();
+        $deletable = $questions->filter(fn (Question $question) => $this->isDeletable($question));
+        $skipped = $questions->count() - $deletable->count();
+
+        DB::transaction(fn () => $deletable->each(fn (Question $question) => $this->deleteTree($question, $logger)));
+
+        Inertia::flash('toast', match (true) {
+            $deletable->isEmpty() => ['type' => 'error', 'message' => __('Tidak ada soal yang dihapus. Soal yang pernah dipakai ujian harus diarsipkan.')],
+            $skipped > 0 => ['type' => 'warning', 'message' => __(':deleted soal dihapus. :skipped soal dilewati karena pernah dipakai ujian; arsipkan soal tersebut.', [
+                'deleted' => $deletable->count(),
+                'skipped' => $skipped,
+            ])],
+            default => ['type' => 'success', 'message' => __(':count soal berhasil dihapus.', ['count' => $deletable->count()])],
+        });
+
+        return back();
+    }
+
+    /**
+     * Soal yang pernah dipakai ujian (versi mana pun) diarsipkan, bukan dihapus.
+     */
+    private function isDeletable(Question $question): bool
+    {
+        return $question->previous_version_id === null
+            && ! ExamQuestion::query()->whereIn('question_id', $this->versionIds($question))->exists();
+    }
+
+    private function deleteTree(Question $question, ActivityLogger $logger): void
+    {
+        $logger->log('question.deleted', null, ['question' => $question->public_id]);
+        $question->children()->each(fn (Question $child) => $child->delete());
+        $question->delete();
     }
 
     /**

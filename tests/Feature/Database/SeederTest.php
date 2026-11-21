@@ -76,7 +76,9 @@ class SeederTest extends TestCase
     {
         $this->seed(DemoSeeder::class);
 
-        $this->assertSame(2, User::query()->where('role', Role::Hr)->count());
+        // 2 HR Recruiter, 1 Head HR, 1 Interviewer.
+        $this->assertSame(4, User::query()->where('role', Role::Hr)->count());
+        $this->assertSame('Head HR', User::query()->where('email', 'head.hr@demo.test')->sole()->jobRole->name);
         $this->assertNotNull(User::query()->where('email', 'kandidat@demo.test')->first()?->candidateProfile);
 
         // Setiap lamaran memiliki riwayat yang diawali tahap awal dan diakhiri tahap saat ini.
@@ -87,10 +89,13 @@ class SeederTest extends TestCase
             $this->assertContains($histories->first()->to_stage, [RecruitmentStage::Invited, RecruitmentStage::Registered]);
             $this->assertSame($application->stage, $histories->last()->to_stage);
 
-            $histories->skip(1)->each(fn ($history) => $this->assertTrue(
-                $history->from_stage->canTransitionTo($history->to_stage),
-                "Transisi {$history->from_stage->value} → {$history->to_stage->value} tidak valid.",
+            // Riwayat berurutan: setiap langkah dimulai dari tahap tujuan langkah sebelumnya.
+            $histories->skip(1)->values()->each(fn ($history, int $index) => $this->assertSame(
+                $histories[$index]->to_label,
+                $history->from_label,
+                "Riwayat tahap tidak bersambung: {$histories[$index]->to_label} → {$history->from_label}.",
             ));
+            $this->assertSame($application->stageLabel(), $histories->last()->to_label);
         });
 
         // Satu kandidat memiliki lamaran di dua rekrutmen.

@@ -5,10 +5,12 @@ namespace App\Http\Resources\Candidates;
 use App\Domain\Candidates\Enums\EvaluationCriterion;
 use App\Domain\Candidates\Enums\RecruitmentStage;
 use App\Domain\Candidates\Models\ApplicationStageHistory;
+use App\Domain\Candidates\Models\CampaignStage;
 use App\Domain\Candidates\Models\CandidateEvaluation;
 use App\Domain\Candidates\Models\CandidateEvaluationScore;
 use App\Domain\Candidates\Models\InternalNote;
 use App\Domain\Candidates\Models\RecruitmentApplication;
+use App\Domain\Candidates\Support\StageTransitions;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -39,12 +41,25 @@ class ApplicationDetailResource extends JsonResource
                 'department' => $this->campaign->position->department->name,
             ],
             'stage' => $this->stage->value,
+            'stage_label' => $this->resource->stageLabel(),
             'stage_changed_at' => $this->stage_changed_at->toIso8601String(),
             'applied_at' => $this->applied_at->toIso8601String(),
-            'allowed_stages' => $this->allowedStagesFor($viewer),
+            // Alur tahap rekrutmen ini, untuk menampilkan posisi kandidat.
+            'pipeline' => $this->campaign->stages->map(fn (CampaignStage $stage) => [
+                'id' => $stage->public_id,
+                'name' => $stage->name,
+                'is_current' => $this->stage === RecruitmentStage::InProcess && $this->campaign_stage_id === $stage->id,
+            ])->values()->all(),
+            // Hanya pilihan yang sah untuk pengguna ini; server tetap memvalidasi ulang.
+            'stage_options' => array_map(fn (array $option) => [
+                'target' => $option['target'],
+                'label' => $option['label'],
+                'requires_reason' => $option['requires_reason'],
+                'kind' => $option['kind'],
+            ], StageTransitions::options($this->resource, $viewer)),
             'history' => $this->stageHistories->sortByDesc('id')->map(fn (ApplicationStageHistory $history) => [
-                'from' => $history->from_stage?->value,
-                'to' => $history->to_stage->value,
+                'from' => $history->from_label ?? $history->from_stage?->label(),
+                'to' => $history->to_label ?? $history->to_stage->label(),
                 'reason' => $history->reason,
                 'changed_by' => $history->changer?->name,
                 'created_at' => $history->created_at?->toIso8601String(),
@@ -77,21 +92,5 @@ class ApplicationDetailResource extends JsonResource
                 })->all(),
             ])->values()->all(),
         ];
-    }
-
-    /**
-     * Tahap tujuan yang boleh dipilih pengguna ini, agar UI hanya menawarkan pilihan yang valid.
-     * Server tetap memvalidasi ulang saat perubahan dikirim.
-     *
-     * @return list<string>
-     */
-    private function allowedStagesFor(User $viewer): array
-    {
-        $targets = array_filter(
-            RecruitmentStage::cases(),
-            fn (RecruitmentStage $target) => $this->stage->canBeChangedManuallyTo($target, $viewer->isSuperAdmin()),
-        );
-
-        return array_values(array_map(fn (RecruitmentStage $stage) => $stage->value, $targets));
     }
 }

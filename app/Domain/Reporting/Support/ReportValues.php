@@ -2,6 +2,7 @@
 
 namespace App\Domain\Reporting\Support;
 
+use App\Domain\Candidates\Enums\RecruitmentStage;
 use Carbon\CarbonImmutable;
 
 /**
@@ -10,18 +11,16 @@ use Carbon\CarbonImmutable;
  */
 class ReportValues
 {
-    public static function stage(?string $stage): string
+    /**
+     * Nama tahap lamaran: nama tahap proses untuk kategori `in_process`, selain itu label kategori.
+     */
+    public static function stage(?string $stage, ?string $processStageName = null): string
     {
-        return match ($stage) {
-            'invited' => __('Diundang'),
-            'registered' => __('Terdaftar'),
-            'under_review' => __('Ditinjau'),
-            'shortlisted' => __('Lolos seleksi awal'),
-            'rejected' => __('Tidak lolos'),
-            'hired' => __('Diterima'),
-            'withdrawn' => __('Mengundurkan diri'),
-            default => '',
-        };
+        if ($stage === 'in_process' && $processStageName !== null) {
+            return $processStageName;
+        }
+
+        return $stage === null ? '' : (RecruitmentStage::tryFrom($stage)?->label() ?? $stage);
     }
 
     public static function result(?string $result): string

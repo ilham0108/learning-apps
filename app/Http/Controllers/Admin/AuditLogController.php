@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Access\Enums\Permission;
 use App\Domain\Candidates\Models\CandidateProfile;
 use App\Domain\Candidates\Models\RecruitmentApplication;
 use App\Domain\Shared\Models\ActivityLog;
@@ -24,7 +25,7 @@ class AuditLogController extends Controller
 {
     public function index(Request $request): Response
     {
-        abort_unless($request->user()->isSuperAdmin(), 404);
+        abort_unless($request->user()->hasPermission(Permission::AuditView), 404);
 
         $filters = $request->validate([
             'action' => ['nullable', 'string', 'max:100'],

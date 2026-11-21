@@ -31,7 +31,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={navigationFor(auth.user.role)} />
+                <NavMain items={navigationFor(auth.user)} />
             </SidebarContent>
 
             <SidebarFooter>

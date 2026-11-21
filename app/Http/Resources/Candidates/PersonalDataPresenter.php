@@ -16,21 +16,24 @@ use Illuminate\Support\Facades\URL;
 class PersonalDataPresenter
 {
     /**
+     * @param  bool  $includeSensitive  Sertakan agama, status pernikahan, dan foto KTP
+     *                                  (kandidat sendiri, atau staf dengan hak `candidates.view_sensitive`).
      * @return array<string, mixed>
      */
-    public static function make(CandidateProfile $profile): array
+    public static function make(CandidateProfile $profile, bool $includeSensitive = true): array
     {
         $profile->loadMissing(['user', 'educations', 'experiences', 'documents']);
 
         return [
+            'sensitive_hidden' => ! $includeSensitive,
             'personal' => [
                 'name' => $profile->user->name,
                 'email' => $profile->user->email,
                 'phone' => $profile->phone,
                 'city' => $profile->city,
                 'birth_date' => $profile->birth_date?->toDateString(),
-                'religion' => $profile->religion?->value,
-                'marital_status' => $profile->marital_status?->value,
+                'religion' => $includeSensitive ? $profile->religion?->value : null,
+                'marital_status' => $includeSensitive ? $profile->marital_status?->value : null,
                 'linkedin_url' => $profile->linkedin_url,
                 'portfolio_url' => $profile->portfolio_url,
             ],
@@ -50,16 +53,18 @@ class PersonalDataPresenter
                 'ended_on' => $experience->ended_on?->format('Y-m'),
                 'description' => $experience->description,
             ])->values()->all(),
-            'documents' => $profile->documents->map(fn (CandidateDocument $document) => [
-                'id' => $document->public_id,
-                'type' => $document->type->value,
-                'label' => $document->label,
-                'name' => $document->file_original_name,
-                'mime' => $document->file_mime,
-                'size' => $document->file_size,
-                'uploaded_at' => $document->created_at?->toIso8601String(),
-                'url' => URL::temporarySignedRoute('candidate-documents.file', now()->addMinutes(10), $document),
-            ])->values()->all(),
+            'documents' => $profile->documents
+                ->filter(fn (CandidateDocument $document) => $includeSensitive || ! $document->type->isSensitive())
+                ->map(fn (CandidateDocument $document) => [
+                    'id' => $document->public_id,
+                    'type' => $document->type->value,
+                    'label' => $document->label,
+                    'name' => $document->file_original_name,
+                    'mime' => $document->file_mime,
+                    'size' => $document->file_size,
+                    'uploaded_at' => $document->created_at?->toIso8601String(),
+                    'url' => URL::temporarySignedRoute('candidate-documents.file', now()->addMinutes(10), $document),
+                ])->values()->all(),
             'completeness' => ProfileCompleteness::check($profile),
         ];
     }

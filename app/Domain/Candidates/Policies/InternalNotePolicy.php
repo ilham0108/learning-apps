@@ -2,6 +2,7 @@
 
 namespace App\Domain\Candidates\Policies;
 
+use App\Domain\Access\Enums\Permission;
 use App\Domain\Candidates\Models\InternalNote;
 use App\Domain\Candidates\Models\RecruitmentApplication;
 use App\Models\User;
@@ -19,7 +20,7 @@ class InternalNotePolicy
             return Response::denyAsNotFound();
         }
 
-        return $user->isSuperAdmin() || ($user->isHr() && $note->author_id === $user->id)
+        return $user->isSuperAdmin() || ($note->author_id === $user->id && $user->hasPermission(Permission::NotesWrite))
             ? Response::allow()
             : Response::deny();
     }

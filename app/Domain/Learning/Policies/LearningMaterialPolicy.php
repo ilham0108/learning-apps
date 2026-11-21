@@ -2,6 +2,7 @@
 
 namespace App\Domain\Learning\Policies;
 
+use App\Domain\Access\Enums\Permission;
 use App\Domain\Learning\Models\LearningMaterial;
 use App\Domain\Learning\Models\LearningProgram;
 use App\Models\User;
@@ -45,6 +46,6 @@ class LearningMaterialPolicy
 
     public function update(User $user, LearningMaterial $material): Response
     {
-        return $user->isCandidate() ? Response::denyAsNotFound() : Response::allow();
+        return $user->hasPermission(Permission::LearningManage) ? Response::allow() : Response::denyAsNotFound();
     }
 }

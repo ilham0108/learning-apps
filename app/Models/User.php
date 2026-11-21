@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Domain\Access\Enums\Permission;
+use App\Domain\Access\Models\JobRole;
 use App\Domain\Candidates\Models\CandidateProfile;
 use App\Domain\Candidates\Models\RecruitmentCampaign;
 use App\Domain\Shared\Concerns\HasPublicId;
@@ -10,6 +12,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -25,6 +28,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property Role $role
+ * @property int|null $job_role_id
  * @property bool $is_active
  * @property Carbon|null $last_login_at
  * @property string|null $two_factor_secret
@@ -40,6 +44,9 @@ class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasPublicId, Notifiable, TwoFactorAuthenticatable;
+
+    /** @var array<int, Permission>|null Hak efektif, disimpan selama satu request. */
+    protected ?array $permissionCache = null;
 
     /**
      * Get the attributes that should be cast.
@@ -96,5 +103,55 @@ class User extends Authenticatable
     public function isCandidate(): bool
     {
         return $this->hasRole(Role::Candidate);
+    }
+
+    /**
+     * Staf perusahaan (selain Super Admin) yang haknya ditentukan jabatan.
+     */
+    public function isStaff(): bool
+    {
+        return $this->hasRole(Role::Hr);
+    }
+
+    /**
+     * Super Admin selalu memiliki semua hak; kandidat tidak memiliki hak staf apa pun.
+     */
+    public function hasPermission(Permission $permission): bool
+    {
+        return in_array($permission, $this->permissions(), true);
+    }
+
+    /**
+     * @return array<int, Permission>
+     */
+    public function permissions(): array
+    {
+        return $this->permissionCache ??= match ($this->role) {
+            Role::SuperAdmin => Permission::cases(),
+            Role::Candidate => [],
+            Role::Hr => $this->jobRole?->permissionList() ?? [],
+        };
+    }
+
+    public function forgetPermissions(): void
+    {
+        $this->permissionCache = null;
+        $this->unsetRelation('jobRole');
+    }
+
+    /**
+     * Melihat semua rekrutmen, bukan hanya yang ditugaskan.
+     */
+    public function seesAllCampaigns(): bool
+    {
+        return $this->hasPermission(Permission::CampaignsViewAll);
+    }
+
+    /**
+     * @return BelongsTo<JobRole, $this>
+     */
+    public function jobRole(): BelongsTo
+    {
+        return $this->belongsTo(JobRole::class);
     }
 }

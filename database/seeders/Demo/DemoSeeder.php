@@ -4,6 +4,7 @@ namespace Database\Seeders\Demo;
 
 use App\Domain\Candidates\Enums\CampaignStatus;
 use App\Domain\Candidates\Enums\RecruitmentStage;
+use App\Domain\Candidates\Models\CampaignStage;
 use App\Domain\Candidates\Models\CandidateEvaluation;
 use App\Domain\Candidates\Models\CandidateProfile;
 use App\Domain\Candidates\Models\Department;
@@ -38,14 +39,11 @@ class DemoSeeder extends Seeder
 {
     public const PASSWORD = 'password';
 
-    /** Urutan tahap normal, dipakai untuk membuat riwayat tahap yang masuk akal. */
-    private const STAGE_PATH = [
-        RecruitmentStage::Invited,
-        RecruitmentStage::Registered,
-        RecruitmentStage::UnderReview,
-        RecruitmentStage::Shortlisted,
-        RecruitmentStage::Hired,
-    ];
+    /**
+     * Urutan langkah normal untuk membuat riwayat tahap yang masuk akal.
+     * `p1` dan `p2` adalah tahap proses pertama dan kedua di alur rekrutmen.
+     */
+    private const STAGE_PATH = ['invited', 'registered', 'p1', 'p2', 'hired'];
 
     private int $candidateSequence = 0;
 
@@ -124,6 +122,15 @@ class DemoSeeder extends Seeder
         $campaigns['salesDraft']->hrUsers()->attach($hrSales->id);
         $campaigns['service']->hrUsers()->attach($hrService->id);
 
+        // Contoh alur yang disesuaikan: rekrutmen Backend punya tahap tambahan.
+        $campaigns['backend']->stages()->create(['name' => 'Tes coding', 'position' => 3]);
+
+        // Contoh jabatan lain: Head HR melihat semua rekrutmen tanpa ditugaskan;
+        // Interviewer hanya melihat rekrutmen Sales dan mengisi evaluasi.
+        User::factory()->headHr()->create(['name' => 'Head HR Demo', 'email' => 'head.hr@demo.test']);
+        $interviewer = User::factory()->interviewer()->create(['name' => 'Interviewer Demo', 'email' => 'interviewer@demo.test']);
+        $campaigns['sales']->hrUsers()->attach($interviewer->id);
+
         return $campaigns;
     }
 
@@ -134,37 +141,28 @@ class DemoSeeder extends Seeder
     private function seedCandidates(array $campaigns, User $hrSales): array
     {
         $sales = collect([
-            $this->createApplication($campaigns['sales'], RecruitmentStage::UnderReview, $hrSales, [
+            $this->createApplication($campaigns['sales'], 'p1', $hrSales, [
                 'name' => 'Kandidat Demo',
                 'email' => 'kandidat@demo.test',
             ]),
-            $this->createApplication($campaigns['sales'], RecruitmentStage::Registered, $hrSales),
-            $this->createApplication($campaigns['sales'], RecruitmentStage::Registered, $hrSales),
-            $this->createApplication($campaigns['sales'], RecruitmentStage::UnderReview, $hrSales),
-            $this->createApplication($campaigns['sales'], RecruitmentStage::Shortlisted, $hrSales),
-            $this->createApplication($campaigns['sales'], RecruitmentStage::Rejected, $hrSales),
-            $this->createApplication($campaigns['sales'], RecruitmentStage::Invited, $hrSales),
-            $this->createApplication($campaigns['sales'], RecruitmentStage::Invited, $hrSales),
+            $this->createApplication($campaigns['sales'], 'registered', $hrSales),
+            $this->createApplication($campaigns['sales'], 'registered', $hrSales),
+            $this->createApplication($campaigns['sales'], 'p1', $hrSales),
+            $this->createApplication($campaigns['sales'], 'p2', $hrSales),
+            $this->createApplication($campaigns['sales'], 'rejected', $hrSales),
+            $this->createApplication($campaigns['sales'], 'invited', $hrSales),
+            $this->createApplication($campaigns['sales'], 'invited', $hrSales),
         ]);
 
-        $service = collect([
-            RecruitmentStage::Registered,
-            RecruitmentStage::Registered,
-            RecruitmentStage::UnderReview,
-            RecruitmentStage::Shortlisted,
-            RecruitmentStage::Withdrawn,
-            RecruitmentStage::Invited,
-        ])->map(fn (RecruitmentStage $stage) => $this->createApplication($campaigns['service'], $stage, $hrSales));
+        $service = collect(['registered', 'registered', 'p1', 'p2', 'withdrawn', 'invited'])
+            ->map(fn (string $step) => $this->createApplication($campaigns['service'], $step, $hrSales));
 
-        $backend = collect([
-            RecruitmentStage::Hired,
-            RecruitmentStage::Rejected,
-            RecruitmentStage::Rejected,
-        ])->map(fn (RecruitmentStage $stage) => $this->createApplication($campaigns['backend'], $stage, $hrSales));
+        $backend = collect(['hired', 'rejected', 'rejected'])
+            ->map(fn (string $step) => $this->createApplication($campaigns['backend'], $step, $hrSales));
 
         // Satu kandidat melamar di dua rekrutmen: membuktikan lamaran terpisah dari profil.
         $repeatCandidate = $backend->get(1)->candidateProfile;
-        $sales->push($this->createApplication($campaigns['sales'], RecruitmentStage::Registered, $hrSales, profile: $repeatCandidate));
+        $sales->push($this->createApplication($campaigns['sales'], 'registered', $hrSales, profile: $repeatCandidate));
 
         DB::table('candidate_number_sequences')->updateOrInsert(
             ['year' => now()->year],
@@ -184,17 +182,20 @@ class DemoSeeder extends Seeder
     /**
      * @param  array{name?: string, email?: string}  $userAttributes
      */
+    /**
+     * @param  string  $step  Salah satu STAGE_PATH, atau 'rejected' / 'withdrawn'.
+     */
     private function createApplication(
         RecruitmentCampaign $campaign,
-        RecruitmentStage $stage,
+        string $step,
         User $actor,
         array $userAttributes = [],
         ?CandidateProfile $profile = null,
     ): RecruitmentApplication {
-        $activated = $stage !== RecruitmentStage::Invited;
+        $activated = $step !== 'invited';
 
         // Kandidat lama yang sudah aktif langsung "registered" saat ditambahkan ke rekrutmen baru.
-        $initialStage = $profile?->activated_at !== null ? RecruitmentStage::Registered : RecruitmentStage::Invited;
+        $initialStep = $profile?->activated_at !== null ? 'registered' : 'invited';
 
         if ($profile === null) {
             $user = User::factory()->candidate()->create($userAttributes);
@@ -210,51 +211,75 @@ class DemoSeeder extends Seeder
             ]);
         }
 
+        $path = $this->pathTo($initialStep, $step);
+        // Tahap proses terakhir yang dilalui (juga untuk kandidat yang tidak lolos atau mengundurkan diri).
+        $lastProcess = collect($path)->last(fn (string $item) => str_starts_with($item, 'p'));
+
         $application = RecruitmentApplication::factory()
             ->for($profile)
             ->for($campaign, 'campaign')
             ->create([
-                'stage' => $stage,
+                'stage' => $this->stageOf($step),
+                'campaign_stage_id' => $lastProcess === null ? null : $this->processStage($campaign, $lastProcess)->id,
                 'applied_at' => $campaign->starts_on,
             ]);
 
-        $this->recordStageHistory($application, $initialStage, $stage, $actor);
+        $this->recordStageHistory($application, $path, $actor);
 
         return $application;
     }
 
-    private function recordStageHistory(
-        RecruitmentApplication $application,
-        RecruitmentStage $initialStage,
-        RecruitmentStage $finalStage,
-        User $actor,
-    ): void {
-        $path = array_values(array_filter(
-            self::STAGE_PATH,
-            fn (RecruitmentStage $stage) => array_search($stage, self::STAGE_PATH, true) >= array_search($initialStage, self::STAGE_PATH, true),
-        ));
+    /**
+     * @return array<int, string>
+     */
+    private function pathTo(string $initialStep, string $finalStep): array
+    {
+        $path = array_slice(self::STAGE_PATH, (int) array_search($initialStep, self::STAGE_PATH, true));
 
-        if (in_array($finalStage, [RecruitmentStage::Rejected, RecruitmentStage::Withdrawn], true)) {
-            $path = [...array_slice($path, 0, 3), $finalStage];
-        } else {
-            $path = array_slice($path, 0, (int) array_search($finalStage, $path, true) + 1);
+        if (in_array($finalStep, ['rejected', 'withdrawn'], true)) {
+            // Contoh: tidak lolos atau mengundurkan diri setelah tahap proses pertama.
+            return [...array_slice($path, 0, (int) array_search('p1', $path, true) + 1), $finalStep];
         }
 
+        return array_slice($path, 0, (int) array_search($finalStep, $path, true) + 1);
+    }
+
+    private function stageOf(string $step): RecruitmentStage
+    {
+        return str_starts_with($step, 'p') ? RecruitmentStage::InProcess : RecruitmentStage::from($step);
+    }
+
+    private function processStage(RecruitmentCampaign $campaign, string $step): CampaignStage
+    {
+        return $campaign->stages()->where('position', (int) substr($step, 1))->firstOrFail();
+    }
+
+    private function labelOf(RecruitmentCampaign $campaign, string $step): string
+    {
+        return str_starts_with($step, 'p') ? $this->processStage($campaign, $step)->name : RecruitmentStage::from($step)->label();
+    }
+
+    /**
+     * @param  array<int, string>  $path
+     */
+    private function recordStageHistory(RecruitmentApplication $application, array $path, User $actor): void
+    {
+        $campaign = $application->campaign;
         $from = null;
 
         foreach ($path as $to) {
             $application->stageHistories()->create([
-                'from_stage' => $from,
-                'to_stage' => $to,
+                'from_stage' => $from === null ? null : $this->stageOf($from),
+                'to_stage' => $this->stageOf($to),
+                'from_label' => $from === null ? null : $this->labelOf($campaign, $from),
+                'to_label' => $this->labelOf($campaign, $to),
                 'reason' => match ($to) {
-                    RecruitmentStage::Rejected => 'Belum memenuhi kualifikasi pengalaman.',
-                    RecruitmentStage::Withdrawn => 'Kandidat mengundurkan diri.',
+                    'rejected' => 'Belum memenuhi kualifikasi pengalaman.',
+                    'withdrawn' => 'Kandidat mengundurkan diri.',
                     default => null,
                 },
                 // Aktivasi akun (invited → registered) dilakukan kandidat sendiri, bukan HR.
-                'changed_by' => $from === RecruitmentStage::Invited && $to === RecruitmentStage::Registered
-                    ? null
-                    : $actor->id,
+                'changed_by' => $from === 'invited' && $to === 'registered' ? null : $actor->id,
             ]);
 
             $from = $to;
@@ -463,7 +488,9 @@ class DemoSeeder extends Seeder
      */
     private function seedEvaluations(Collection $applications, User $hrSales): void
     {
-        $shortlisted = $applications->first(fn (RecruitmentApplication $application) => $application->stage === RecruitmentStage::Shortlisted);
+        // Kandidat di tahap proses kedua (Lolos seleksi awal) sudah dievaluasi.
+        $shortlisted = $applications->first(fn (RecruitmentApplication $application) => $application->stage === RecruitmentStage::InProcess
+            && $application->campaignStage?->position === 2);
 
         if ($shortlisted !== null) {
             CandidateEvaluation::factory()->finalized()->create([
@@ -484,8 +511,7 @@ class DemoSeeder extends Seeder
         return $applications
             ->filter(fn (RecruitmentApplication $application) => in_array($application->stage, [
                 RecruitmentStage::Registered,
-                RecruitmentStage::UnderReview,
-                RecruitmentStage::Shortlisted,
+                RecruitmentStage::InProcess,
             ], true))
             ->values();
     }

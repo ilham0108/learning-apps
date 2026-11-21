@@ -2,10 +2,8 @@
 
 namespace App\Http\Requests\Admin;
 
-use App\Domain\Candidates\Enums\RecruitmentStage;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class ChangeStageRequest extends FormRequest
 {
@@ -17,7 +15,8 @@ class ChangeStageRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'stage' => ['required', Rule::enum(RecruitmentStage::class)],
+            // 'stage:<public_id>' untuk tahap proses, atau 'hired', 'rejected', 'withdrawn', 'registered'.
+            'target' => ['required', 'string', 'max:40'],
             'reason' => ['nullable', 'string', 'max:1000'],
         ];
     }

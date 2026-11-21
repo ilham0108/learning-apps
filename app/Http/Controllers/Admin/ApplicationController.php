@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Domain\Candidates\Actions\ChangeApplicationStage;
 use App\Domain\Candidates\Actions\SaveEvaluation;
 use App\Domain\Candidates\Enums\Recommendation;
-use App\Domain\Candidates\Enums\RecruitmentStage;
 use App\Domain\Candidates\Models\InternalNote;
 use App\Domain\Candidates\Models\RecruitmentApplication;
 use App\Domain\Shared\Audit\ActivityLogger;
@@ -23,11 +22,11 @@ class ApplicationController extends Controller
 {
     public function updateStage(ChangeStageRequest $request, RecruitmentApplication $application, ChangeApplicationStage $changeStage): RedirectResponse
     {
-        $this->authorize('manage', $application);
+        $this->authorize('changeStage', $application);
 
         $changeStage(
             $application,
-            $request->enum('stage', RecruitmentStage::class),
+            $request->validated('target'),
             $request->validated('reason'),
             $request->user(),
         );
@@ -37,7 +36,7 @@ class ApplicationController extends Controller
 
     public function storeNote(InternalNoteRequest $request, RecruitmentApplication $application): RedirectResponse
     {
-        $this->authorize('manage', $application);
+        $this->authorize('writeNote', $application);
 
         $application->internalNotes()->create([
             'author_id' => $request->user()->id,
@@ -68,7 +67,7 @@ class ApplicationController extends Controller
 
     public function updateEvaluation(EvaluationRequest $request, RecruitmentApplication $application, SaveEvaluation $saveEvaluation): RedirectResponse
     {
-        $this->authorize('manage', $application);
+        $this->authorize('evaluate', $application);
 
         $finalize = $request->boolean('finalize');
 

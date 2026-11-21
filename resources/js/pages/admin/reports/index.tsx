@@ -63,8 +63,7 @@ type Props = {
 const stages: RecruitmentStage[] = [
     'invited',
     'registered',
-    'under_review',
-    'shortlisted',
+    'in_process',
     'rejected',
     'hired',
     'withdrawn',

@@ -32,12 +32,21 @@ class ActivationController extends Controller
     {
         $this->ensureValidToken($user, $token);
 
-        $activate($user, $request->string('password')->toString());
+        if ($user->isCandidate()) {
+            $activate($user, $request->string('password')->toString());
+        } else {
+            // Staf: cukup atur password; persetujuan data hanya untuk kandidat.
+            $user->forceFill([
+                'password' => $request->string('password')->toString(),
+                'email_verified_at' => now(),
+            ])->save();
+            CreateActivationLink::broker()->deleteToken($user);
+        }
 
         Auth::login($user);
         $request->session()->regenerate();
 
-        return to_route('consent.show');
+        return $user->isCandidate() ? to_route('consent.show') : to_route('admin.dashboard');
     }
 
     /**
@@ -46,9 +55,8 @@ class ActivationController extends Controller
     private function ensureValidToken(User $user, string $token): void
     {
         abort_unless(
-            $user->isCandidate()
-                && $user->is_active
-                && $user->candidateProfile?->activated_at === null
+            $user->is_active
+                && CreateActivationLink::awaitsActivation($user)
                 && CreateActivationLink::broker()->tokenExists($user, $token),
             404,
         );

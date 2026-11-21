@@ -2,8 +2,10 @@ import { useForm, usePage } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { useState } from 'react';
 import { FormField } from '@/components/app/form-field';
-import { OptionSelect } from '@/components/app/option-select';
-import { RecruitmentStageBadge } from '@/components/app/status-badge';
+import {
+    RecruitmentStageBadge,
+    StatusBadge,
+} from '@/components/app/status-badge';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -17,15 +19,96 @@ import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { formatDateTime } from '@/lib/format';
 import { t } from '@/lib/i18n';
+import { CompletedIcon } from '@/lib/icons';
+import { cn } from '@/lib/utils';
 import applications from '@/routes/admin/applications';
-import type { ApplicationDetail, RecruitmentStage } from '@/types';
+import type { ApplicationDetail, StageOption } from '@/types';
 
-/** Sama dengan RecruitmentStage::requiresReason() di server; server tetap memvalidasi ulang. */
-function requiresReason(from: RecruitmentStage, to: RecruitmentStage): boolean {
+function actionLabel(option: StageOption): string {
+    switch (option.kind) {
+        case 'advance':
+            return t('admin.applications.stage.actions.advance', {
+                stage: option.label,
+            });
+        case 'correction':
+            return t('admin.applications.stage.actions.correction', {
+                stage: option.label,
+            });
+        default:
+            return option.target === 'hired'
+                ? t('admin.applications.stage.actions.hired')
+                : option.target === 'rejected'
+                  ? t('admin.applications.stage.actions.rejected')
+                  : t('admin.applications.stage.actions.withdrawn');
+    }
+}
+
+/** Alur tahap proses sebagai urutan langkah; status tiap langkah juga tertulis untuk pembaca layar. */
+function PipelineSteps({ application }: { application: ApplicationDetail }) {
+    const currentIndex = application.pipeline.findIndex(
+        (stage) => stage.is_current,
+    );
+    const afterProcess = ['hired'].includes(application.stage);
+
+    if (application.pipeline.length === 0) {
+        return null;
+    }
+
     return (
-        to === 'rejected' ||
-        to === 'withdrawn' ||
-        (from === 'rejected' && to === 'under_review')
+        <ol
+            aria-label={t('admin.applications.stage.pipelineLabel')}
+            className="flex flex-wrap items-center gap-1.5 text-xs"
+        >
+            {application.pipeline.map((stage, index) => {
+                const done =
+                    afterProcess || (currentIndex >= 0 && index < currentIndex);
+                const current = stage.is_current;
+
+                return (
+                    <li key={stage.id} className="flex items-center gap-1.5">
+                        <span
+                            aria-current={current ? 'step' : undefined}
+                            className={cn(
+                                'inline-flex items-center gap-1 rounded-full border px-2.5 py-1',
+                                current &&
+                                    'border-primary bg-primary text-primary-foreground',
+                                done &&
+                                    'border-primary/40 bg-primary/10 text-primary',
+                                !current && !done && 'text-muted-foreground',
+                            )}
+                        >
+                            {done && (
+                                <CompletedIcon
+                                    className="size-3.5"
+                                    aria-hidden="true"
+                                />
+                            )}
+                            {stage.name}
+                            <span className="sr-only">
+                                ,{' '}
+                                {done
+                                    ? t('admin.applications.stage.stepDone')
+                                    : current
+                                      ? t(
+                                            'admin.applications.stage.stepCurrent',
+                                        )
+                                      : t(
+                                            'admin.applications.stage.stepUpcoming',
+                                        )}
+                            </span>
+                        </span>
+                        {index < application.pipeline.length - 1 && (
+                            <span
+                                className="text-muted-foreground"
+                                aria-hidden="true"
+                            >
+                                →
+                            </span>
+                        )}
+                    </li>
+                );
+            })}
+        </ol>
     );
 }
 
@@ -35,14 +118,14 @@ export function StageSection({
     application: ApplicationDetail;
 }) {
     const { displayTimezone } = usePage().props;
-    const [open, setOpen] = useState(false);
+    const [selected, setSelected] = useState<StageOption | null>(null);
 
     return (
         <section
             className="space-y-4"
             aria-labelledby={`stage-${application.id}`}
         >
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="space-y-3">
                 <div className="space-y-1">
                     <h3
                         id={`stage-${application.id}`}
@@ -51,7 +134,10 @@ export function StageSection({
                         {t('admin.applications.stage.title')}
                     </h3>
                     <div className="flex flex-wrap items-center gap-2">
-                        <RecruitmentStageBadge stage={application.stage} />
+                        <RecruitmentStageBadge
+                            stage={application.stage}
+                            label={application.stage_label}
+                        />
                         <span className="text-xs text-muted-foreground">
                             {t('admin.applications.stage.since', {
                                 date: formatDateTime(
@@ -62,17 +148,39 @@ export function StageSection({
                         </span>
                     </div>
                 </div>
-                {application.allowed_stages.length > 0 ? (
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setOpen(true)}
-                    >
-                        {t('admin.applications.stage.change')}
-                    </Button>
+
+                <PipelineSteps application={application} />
+
+                {application.stage_options.length > 0 ? (
+                    <div className="space-y-2">
+                        <div className="flex flex-wrap gap-2">
+                            {application.stage_options.map((option) => (
+                                <Button
+                                    key={option.target}
+                                    size="sm"
+                                    variant={
+                                        option.target === 'rejected'
+                                            ? 'destructive'
+                                            : option.kind === 'advance' ||
+                                                option.target === 'hired'
+                                              ? 'default'
+                                              : 'outline'
+                                    }
+                                    onClick={() => setSelected(option)}
+                                >
+                                    {actionLabel(option)}
+                                </Button>
+                            ))}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                            {t('admin.applications.stage.sequentialHint')}
+                        </p>
+                    </div>
                 ) : (
                     <p className="text-xs text-muted-foreground">
-                        {t('admin.applications.stage.noTransitions')}
+                        {application.campaign.status === 'closed'
+                            ? t('admin.applications.stage.closedCampaign')
+                            : t('admin.applications.stage.noTransitions')}
                     </p>
                 )}
             </div>
@@ -91,9 +199,7 @@ export function StageSection({
                             <div className="flex flex-wrap items-center gap-1.5">
                                 {entry.from ? (
                                     <>
-                                        <RecruitmentStageBadge
-                                            stage={entry.from}
-                                        />
+                                        <StatusBadge label={entry.from} />
                                         <span aria-hidden="true">→</span>
                                     </>
                                 ) : (
@@ -104,7 +210,7 @@ export function StageSection({
                                         :
                                     </span>
                                 )}
-                                <RecruitmentStageBadge stage={entry.to} />
+                                <StatusBadge label={entry.to} tone="info" />
                             </div>
                             <p className="mt-1 text-xs text-muted-foreground">
                                 {formatDateTime(
@@ -121,39 +227,36 @@ export function StageSection({
                                       )}
                             </p>
                             {entry.reason && (
-                                <p className="mt-1 rounded-md bg-muted px-2 py-1 text-xs">
-                                    {entry.reason}
-                                </p>
+                                <p className="mt-1 text-sm">{entry.reason}</p>
                             )}
                         </li>
                     ))}
                 </ol>
             </div>
 
-            {open && (
-                <ChangeStageDialog
+            {selected && (
+                <MoveDialog
+                    key={selected.target}
                     application={application}
-                    onClose={() => setOpen(false)}
+                    option={selected}
+                    onClose={() => setSelected(null)}
                 />
             )}
         </section>
     );
 }
 
-function ChangeStageDialog({
+function MoveDialog({
     application,
+    option,
     onClose,
 }: {
     application: ApplicationDetail;
+    option: StageOption;
     onClose: () => void;
 }) {
-    const form = useForm<{ stage: RecruitmentStage | ''; reason: string }>({
-        stage: '',
-        reason: '',
-    });
-    const needsReason =
-        form.data.stage !== '' &&
-        requiresReason(application.stage, form.data.stage);
+    const form = useForm({ target: option.target, reason: '' });
+    const reasonId = `reason-${application.id}`;
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
@@ -166,94 +269,67 @@ function ChangeStageDialog({
     return (
         <Dialog open onOpenChange={(open) => !open && onClose()}>
             <DialogContent>
-                <form onSubmit={submit} className="grid gap-6">
-                    <DialogHeader>
-                        <DialogTitle>
-                            {t('admin.applications.stage.changeTitle')}
-                        </DialogTitle>
-                        <DialogDescription>
-                            {t('admin.applications.stage.changeDescription')}
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    {application.campaign.status === 'closed' && (
-                        <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300">
-                            {t('admin.applications.stage.closedCampaign')}
+                <DialogHeader>
+                    <DialogTitle>
+                        {t('admin.applications.stage.confirmTitle', {
+                            stage: option.label,
+                        })}
+                    </DialogTitle>
+                    <DialogDescription>
+                        {t('admin.applications.stage.changeDescription')}
+                    </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={submit} className="space-y-4">
+                    {form.errors.target && (
+                        <p className="text-sm text-red-700 dark:text-red-400">
+                            {form.errors.target}
                         </p>
                     )}
-
                     <FormField
-                        id="stage"
-                        label={t('admin.applications.stage.target')}
-                        error={form.errors.stage}
-                    >
-                        <OptionSelect
-                            id="stage"
-                            value={form.data.stage || null}
-                            onChange={(value) =>
-                                form.setData(
-                                    'stage',
-                                    (value ?? '') as RecruitmentStage | '',
-                                )
-                            }
-                            options={application.allowed_stages.map(
-                                (stage) => ({
-                                    value: stage,
-                                    label: t(
-                                        `status.recruitmentStage.${stage}`,
-                                    ),
-                                }),
-                            )}
-                            placeholder={t(
-                                'admin.applications.stage.targetPlaceholder',
-                            )}
-                        />
-                    </FormField>
-
-                    <FormField
-                        id="reason"
+                        id={reasonId}
                         label={t('common.reason')}
                         error={form.errors.reason}
-                        optional={!needsReason}
+                        optional={!option.requires_reason}
                         description={
-                            needsReason
+                            option.requires_reason
                                 ? t('admin.applications.stage.reasonRequired')
                                 : undefined
                         }
                     >
                         <Textarea
-                            id="reason"
+                            id={reasonId}
+                            rows={3}
+                            maxLength={1000}
+                            required={option.requires_reason}
+                            placeholder={t(
+                                'admin.applications.stage.reasonPlaceholder',
+                            )}
                             value={form.data.reason}
                             onChange={(event) =>
                                 form.setData('reason', event.target.value)
                             }
-                            placeholder={t(
-                                'admin.applications.stage.reasonPlaceholder',
-                            )}
-                            required={needsReason}
-                            maxLength={1000}
                         />
                     </FormField>
-
                     <DialogFooter className="gap-2">
                         <Button
                             type="button"
                             variant="outline"
                             onClick={onClose}
+                            disabled={form.processing}
                         >
                             {t('common.cancel')}
                         </Button>
                         <Button
                             type="submit"
                             variant={
-                                form.data.stage === 'rejected'
+                                option.target === 'rejected'
                                     ? 'destructive'
                                     : 'default'
                             }
-                            disabled={form.processing || form.data.stage === ''}
+                            disabled={form.processing}
                         >
                             {form.processing && <Spinner />}
-                            {t('common.save')}
+                            {actionLabel(option)}
                         </Button>
                     </DialogFooter>
                 </form>

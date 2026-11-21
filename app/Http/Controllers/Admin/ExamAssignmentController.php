@@ -38,7 +38,7 @@ class ExamAssignmentController extends Controller
     public function update(ExamAssignmentScheduleRequest $request, ExamAssignment $assignment, ActivityLogger $logger): RedirectResponse
     {
         $this->ensureInScope($request, $assignment);
-        $this->authorize('update', $assignment->exam);
+        $this->authorize('manageAssignments', $assignment->exam);
 
         $assignment->update($request->scheduleData());
         $logger->log('exam_assignment.schedule_changed', $assignment, [
@@ -58,7 +58,7 @@ class ExamAssignmentController extends Controller
     public function destroy(Request $request, ExamAssignment $assignment, ActivityLogger $logger): RedirectResponse
     {
         $this->ensureInScope($request, $assignment);
-        $this->authorize('update', $assignment->exam);
+        $this->authorize('manageAssignments', $assignment->exam);
 
         if ($assignment->attempts()->exists()) {
             Inertia::flash('toast', ['type' => 'error', 'message' => __('Penugasan yang sudah dikerjakan tidak dapat dicabut.')]);

@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Domain\Candidates\Enums\CampaignStatus;
+use App\Domain\Candidates\Models\PipelineStageTemplate;
 use App\Domain\Candidates\Models\Position;
 use App\Domain\Candidates\Models\RecruitmentCampaign;
 use App\Models\User;
@@ -30,6 +31,22 @@ class RecruitmentCampaignFactory extends Factory
             'status' => CampaignStatus::Open,
             'created_by' => null,
         ];
+    }
+
+    /**
+     * Seperti aplikasi: rekrutmen baru mendapat salinan alur tahap default.
+     */
+    public function configure(): static
+    {
+        return $this->afterCreating(function (RecruitmentCampaign $campaign): void {
+            if ($campaign->stages()->exists()) {
+                return;
+            }
+
+            PipelineStageTemplate::query()->orderBy('position')->get()->each(
+                fn (PipelineStageTemplate $template) => $campaign->stages()->create(['name' => $template->name, 'position' => $template->position]),
+            );
+        });
     }
 
     public function draft(): static

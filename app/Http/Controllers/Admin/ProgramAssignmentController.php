@@ -40,7 +40,7 @@ class ProgramAssignmentController extends Controller
             RecruitmentApplication::query()->visibleTo($request->user())->whereKey($assignment->recruitment_application_id)->exists(),
             404,
         );
-        $this->authorize('update', $assignment->program);
+        $this->authorize('unassign', $assignment->program);
 
         $logger->log('program.unassigned', $assignment->program, ['application' => $assignment->application->public_id]);
         $assignment->delete();

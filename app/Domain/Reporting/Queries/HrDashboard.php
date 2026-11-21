@@ -183,7 +183,7 @@ class HrDashboard
 
         $stages = $base()
             ->join('application_stage_histories as h', 'h.recruitment_application_id', '=', 'a.id')
-            ->selectRaw("'stage_changed' as type, u.name as candidate, cp.public_id as candidate_public_id, h.to_stage as detail, h.created_at as occurred_at");
+            ->selectRaw("'stage_changed' as type, u.name as candidate, cp.public_id as candidate_public_id, coalesce(h.to_label, h.to_stage) as detail, h.created_at as occurred_at");
 
         $attempts = $base()
             ->join('exam_assignments as ea', 'ea.recruitment_application_id', '=', 'a.id')

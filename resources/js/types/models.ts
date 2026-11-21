@@ -3,13 +3,16 @@
  * tanggal berformat ISO 8601 UTC, dan tanggal tanpa jam berformat YYYY-MM-DD.
  */
 
+/**
+ * Kategori tahap lamaran. Kategori `in_process` menunjuk ke tahap proses milik
+ * rekrutmen (misalnya Psikotes); namanya ada di `stage_label`.
+ */
 export type RecruitmentStage =
     | 'invited'
     | 'registered'
-    | 'under_review'
-    | 'shortlisted'
-    | 'rejected'
+    | 'in_process'
     | 'hired'
+    | 'rejected'
     | 'withdrawn';
 
 export type CampaignStatus = 'draft' | 'open' | 'closed';
@@ -33,6 +36,11 @@ export type OwnApplication = {
     position: string;
     department: string;
     stage: RecruitmentStage;
+    stage_label: string;
+    /** Nama tahap proses rekrutmen, berurutan. */
+    pipeline: string[];
+    /** Indeks tahap proses saat ini (atau terakhir) di `pipeline`. */
+    current_step: number | null;
     applied_at: string;
 };
 
@@ -118,12 +126,14 @@ export type CandidateListItem = {
         campaign: string;
         position: string;
         stage: RecruitmentStage;
+        stage_label: string;
     }[];
 };
 
+/** Nama tahap disimpan saat perubahan, sehingga tetap terbaca walau tahap diganti nama. */
 export type StageHistoryEntry = {
-    from: RecruitmentStage | null;
-    to: RecruitmentStage;
+    from: string | null;
+    to: string;
     reason: string | null;
     changed_by: string | null;
     created_at: string | null;
@@ -164,9 +174,12 @@ export type ApplicationDetail = {
         department: string;
     };
     stage: RecruitmentStage;
+    stage_label: string;
     stage_changed_at: string;
     applied_at: string;
-    allowed_stages: RecruitmentStage[];
+    pipeline: { id: string; name: string; is_current: boolean }[];
+    /** Perpindahan yang sah untuk pengguna ini (dari StageTransitions). */
+    stage_options: StageOption[];
     history: StageHistoryEntry[];
     notes: InternalNote[];
     evaluations: CandidateEvaluation[];
@@ -611,4 +624,21 @@ export type PersonalData = {
     experiences: CandidateExperience[];
     documents: CandidateDocument[];
     completeness: ProfileCompleteness;
+};
+
+/** Pilihan perpindahan tahap dari server. */
+export type StageOption = {
+    /** `stage:<public_id>` untuk tahap proses, atau `hired`/`rejected`/`withdrawn`/`registered`. */
+    target: string;
+    label: string;
+    requires_reason: boolean;
+    kind: 'advance' | 'decision' | 'exit' | 'correction';
+};
+
+/** Tahap proses di alur rekrutmen atau alur default. */
+export type PipelineStage = {
+    id: string;
+    name: string;
+    current_count?: number;
+    removable?: boolean;
 };

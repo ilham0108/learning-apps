@@ -35,4 +35,15 @@ class RecruitmentApplicationFactory extends Factory
             'stage' => $stage,
         ]);
     }
+
+    /**
+     * Lamaran di tahap proses ke-`$position` (1 = tahap pertama) rekrutmennya.
+     */
+    public function inProcess(int $position = 1): static
+    {
+        return $this->stage(RecruitmentStage::InProcess)->afterCreating(function (RecruitmentApplication $application) use ($position): void {
+            $stage = $application->campaign->stages()->where('position', $position)->firstOrFail();
+            $application->forceFill(['campaign_stage_id' => $stage->id])->save();
+        });
+    }
 }

@@ -2,8 +2,11 @@
 
 namespace Tests\Feature\Candidates;
 
+use App\Domain\Access\Enums\Permission;
+use App\Domain\Access\Models\JobRole;
 use App\Domain\Candidates\Enums\EvaluationStatus;
 use App\Domain\Candidates\Enums\RecruitmentStage;
+use App\Domain\Candidates\Models\CampaignStage;
 use App\Domain\Candidates\Models\CandidateEvaluation;
 use App\Domain\Candidates\Models\InternalNote;
 use App\Domain\Candidates\Models\RecruitmentApplication;
@@ -11,6 +14,7 @@ use App\Domain\Candidates\Models\RecruitmentCampaign;
 use App\Domain\Shared\Models\ActivityLog;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -27,95 +31,143 @@ class ApplicationManagementTest extends TestCase
         parent::setUp();
 
         $this->hr = User::factory()->hr()->create();
+        // Alur default: 1. Ditinjau, 2. Lolos seleksi awal. Kandidat sedang di tahap 1.
         $this->application = RecruitmentApplication::factory()
             ->for(RecruitmentCampaign::factory()->assignedTo($this->hr), 'campaign')
-            ->create(['stage' => RecruitmentStage::UnderReview]);
+            ->inProcess(1)
+            ->create();
     }
 
-    public function test_hr_can_change_the_stage_and_it_is_recorded()
+    private function stage(int $position): CampaignStage
     {
-        $this->actingAs($this->hr)
-            ->patch(route('admin.applications.stage.update', $this->application), ['stage' => 'shortlisted'])
-            ->assertSessionHasNoErrors();
+        return $this->application->campaign->stages()->where('position', $position)->sole();
+    }
 
-        $this->assertSame(RecruitmentStage::Shortlisted, $this->application->refresh()->stage);
+    private function move(RecruitmentApplication $application, string $target, ?string $reason = null): TestResponse
+    {
+        return $this->patch(route('admin.applications.stage.update', $application), array_filter(['target' => $target, 'reason' => $reason]));
+    }
+
+    public function test_hr_moves_candidates_to_the_next_stage_and_it_is_recorded()
+    {
+        $this->actingAs($this->hr);
+        $this->move($this->application, 'stage:'.$this->stage(2)->public_id)->assertSessionHasNoErrors();
+
+        $this->application->refresh();
+        $this->assertSame(RecruitmentStage::InProcess, $this->application->stage);
+        $this->assertSame('Lolos seleksi awal', $this->application->stageLabel());
 
         $history = $this->application->stageHistories()->sole();
-        $this->assertSame(RecruitmentStage::UnderReview, $history->from_stage);
+        $this->assertSame('Ditinjau', $history->from_label);
+        $this->assertSame('Lolos seleksi awal', $history->to_label);
         $this->assertSame($this->hr->id, $history->changed_by);
 
         $log = ActivityLog::query()->where('action', 'application.stage_changed')->sole();
-        // Kolom JSON MySQL tidak mempertahankan urutan kunci.
-        $this->assertEquals(['from' => 'under_review', 'to' => 'shortlisted'], $log->properties);
+        $this->assertEquals(['from' => 'Ditinjau', 'to' => 'Lolos seleksi awal'], $log->properties);
+
+        // Dari tahap terakhir, langkah berikutnya adalah keputusan "Diterima".
+        $this->move($this->application, 'hired')->assertSessionHasNoErrors();
+        $this->assertSame(RecruitmentStage::Hired, $this->application->refresh()->stage);
     }
 
-    public function test_invalid_transitions_are_rejected()
+    public function test_stages_cannot_be_skipped()
     {
         $this->actingAs($this->hr);
 
-        $this->patch(route('admin.applications.stage.update', $this->application), ['stage' => 'hired'])
-            ->assertSessionHasErrors('stage');
-        $this->patch(route('admin.applications.stage.update', $this->application), ['stage' => 'tidak-ada'])
-            ->assertSessionHasErrors('stage');
+        // Dari tahap 1 tidak bisa langsung diterima (masih ada tahap 2).
+        $this->move($this->application, 'hired')->assertSessionHasErrors('target');
+        $this->move($this->application, 'tidak-ada')->assertSessionHasErrors('target');
 
+        // Terdaftar → hanya ke tahap proses pertama.
+        $registered = RecruitmentApplication::factory()->for($this->application->campaign, 'campaign')->stage(RecruitmentStage::Registered)->create();
+        $this->move($registered, 'stage:'.$this->stage(2)->public_id)->assertSessionHasErrors('target');
+        $this->move($registered, 'stage:'.$this->stage(1)->public_id)->assertSessionHasNoErrors();
+
+        // Diundang → terdaftar hanya lewat aktivasi akun.
         $invited = RecruitmentApplication::factory()->for($this->application->campaign, 'campaign')->create();
-        $this->patch(route('admin.applications.stage.update', $invited), ['stage' => 'registered'])
-            ->assertSessionHasErrors('stage');
+        $this->move($invited, 'registered')->assertSessionHasErrors('target');
 
-        $this->assertSame(RecruitmentStage::UnderReview, $this->application->refresh()->stage);
+        // Tahap rekrutmen lain tidak bisa dipakai.
+        $foreign = RecruitmentCampaign::factory()->create()->stages()->first();
+        $this->move($this->application, 'stage:'.$foreign->public_id)->assertSessionHasErrors('target');
+
+        $this->assertSame($this->stage(1)->id, $this->application->refresh()->campaign_stage_id);
     }
 
     public function test_rejection_requires_a_reason()
     {
         $this->actingAs($this->hr);
 
-        $this->patch(route('admin.applications.stage.update', $this->application), ['stage' => 'rejected', 'reason' => '  '])
-            ->assertSessionHasErrors('reason');
+        $this->move($this->application, 'rejected', '  ')->assertSessionHasErrors('reason');
+        $this->move($this->application, 'rejected', 'Tidak hadir wawancara')->assertSessionHasNoErrors();
 
-        $this->patch(route('admin.applications.stage.update', $this->application), ['stage' => 'rejected', 'reason' => 'Tidak hadir wawancara'])
-            ->assertSessionHasNoErrors();
-
+        $this->application->refresh();
+        $this->assertSame(RecruitmentStage::Rejected, $this->application->stage);
+        // Tahap tempat keputusan diambil tetap tersimpan.
+        $this->assertSame($this->stage(1)->id, $this->application->campaign_stage_id);
         $this->assertSame('Tidak hadir wawancara', $this->application->stageHistories()->sole()->reason);
+    }
+
+    public function test_final_decisions_need_the_decide_permission()
+    {
+        $interviewer = User::factory()->interviewer()->create();
+        $this->application->campaign->hrUsers()->attach($interviewer->id);
+        $role = JobRole::create(['name' => 'Koordinator']);
+        $role->syncPermissions([Permission::ApplicationsMoveStage]);
+        $coordinator = User::factory()->withJobRole($role)->create();
+        $this->application->campaign->hrUsers()->attach($coordinator->id);
+
+        $this->actingAs($interviewer);
+        $this->move($this->application, 'stage:'.$this->stage(2)->public_id)->assertForbidden();
+
+        $this->actingAs($coordinator);
+        $this->move($this->application, 'rejected', 'Tidak cocok')->assertSessionHasErrors('target');
+        $this->move($this->application, 'stage:'.$this->stage(2)->public_id)->assertSessionHasNoErrors();
+        $this->move($this->application, 'hired')->assertSessionHasErrors('target');
     }
 
     public function test_only_super_admin_can_correct_a_rejection_or_change_closed_campaigns()
     {
-        $this->application->update(['stage' => RecruitmentStage::Rejected]);
+        $this->actingAs($this->hr)->move($this->application, 'rejected', 'Salah pilih');
         $admin = User::factory()->superAdmin()->create();
+        $back = 'stage:'.$this->stage(1)->public_id;
 
-        $this->actingAs($this->hr)
-            ->patch(route('admin.applications.stage.update', $this->application), ['stage' => 'under_review', 'reason' => 'Salah input'])
-            ->assertSessionHasErrors('stage');
+        $this->move($this->application, $back, 'Salah input')->assertSessionHasErrors('target');
 
-        $this->actingAs($admin)
-            ->patch(route('admin.applications.stage.update', $this->application), ['stage' => 'under_review', 'reason' => 'Salah input'])
-            ->assertSessionHasNoErrors();
+        $this->actingAs($admin);
+        $this->move($this->application, $back)->assertSessionHasErrors('reason');
+        $this->move($this->application, $back, 'Salah input')->assertSessionHasNoErrors();
+        $this->assertSame(RecruitmentStage::InProcess, $this->application->refresh()->stage);
 
         $this->application->campaign->update(['status' => 'closed']);
 
-        $this->actingAs($this->hr)
-            ->patch(route('admin.applications.stage.update', $this->application), ['stage' => 'shortlisted'])
-            ->assertSessionHasErrors('stage');
+        $this->actingAs($this->hr);
+        $this->move($this->application, 'stage:'.$this->stage(2)->public_id)->assertSessionHasErrors('target');
 
-        $this->actingAs($admin)
-            ->patch(route('admin.applications.stage.update', $this->application), ['stage' => 'shortlisted'])
-            ->assertSessionHasNoErrors();
+        $this->actingAs($admin);
+        $this->move($this->application, 'stage:'.$this->stage(2)->public_id)->assertSessionHasNoErrors();
     }
 
-    public function test_the_ui_only_offers_allowed_stages()
+    public function test_the_ui_only_offers_the_next_step()
     {
         $this->actingAs($this->hr)
             ->get(route('admin.candidates.show', $this->application->candidateProfile))
             ->assertInertia(fn (Assert $page) => $page
-                ->where('candidate.applications.0.allowed_stages', ['shortlisted', 'rejected', 'withdrawn']));
+                ->where('candidate.applications.0.stage_label', 'Ditinjau')
+                ->where('candidate.applications.0.pipeline.0.is_current', true)
+                ->where('candidate.applications.0.stage_options.0.target', 'stage:'.$this->stage(2)->public_id)
+                ->where('candidate.applications.0.stage_options.0.label', 'Lolos seleksi awal')
+                ->where('candidate.applications.0.stage_options.1.target', 'rejected')
+                ->where('candidate.applications.0.stage_options.2.target', 'withdrawn')
+                ->has('candidate.applications.0.stage_options', 3));
     }
 
     public function test_out_of_scope_applications_return_not_found()
     {
-        $other = RecruitmentApplication::factory()->create(['stage' => RecruitmentStage::UnderReview]);
+        $other = RecruitmentApplication::factory()->inProcess()->create();
         $this->actingAs($this->hr);
 
-        $this->patch(route('admin.applications.stage.update', $other), ['stage' => 'shortlisted'])->assertNotFound();
+        $this->move($other, 'withdrawn', 'x')->assertNotFound();
         $this->post(route('admin.applications.notes.store', $other), ['body' => 'x'])->assertNotFound();
         $this->put(route('admin.applications.evaluation.update', $other), $this->evaluationPayload())->assertNotFound();
     }
